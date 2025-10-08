@@ -134,6 +134,20 @@
     .sales-row .sales-pill{ color:#111 !important; }      /* 各明細行の「－ 削除」を黒に */
     #submitSales.sales-pill{ background:#111; color:#fff !important; border-color:#111; } /* 送信は黒ボタンで目立たせる */
 
+    /* 延長バッジ */
+    .extBadge{
+    display:inline-block;
+    margin-left:8px;
+    padding:2px 6px;
+    border-radius:999px;
+    border:1px solid #6b7280;
+    font-size:12px;
+    line-height:1;
+    opacity:.85;
+    background:#fff;
+    }
+
+
   </style>
 </head>
 
@@ -285,10 +299,15 @@ let dutyMap = JSON.parse(localStorage.getItem('staff.duty.map') || '{}');
 window.staff = staff; window.dutyMap = dutyMap;
 
 /* ================= 席データ ================= */
-const seats = (()=>{const saved=localStorage.getItem('seats.v2');if(saved){const arr=JSON.parse(saved);arr.forEach(s=>{if(s.finished===undefined)s.finished=false});return arr;}
-const a=[];for(let i=1;i<=8;i++)a.push({id:`R${i}`,label:`VIP ${i}`,group:'red',cast:'',boy:'',end:null,finished:false});
-for(let i=1;i<=7;i++)a.push({id:`B${i}`,label:`ノーマル ${i}`,group:'blue',cast:'',boy:'',end:null,finished:false});
-for(let i=1;i<=3;i++)a.push({id:`V${i}`,label:`超VIP ${i}`,group:'vip',cast:'',boy:'',end:null,finished:false});return a;})();
+const seats = (()=>{const saved=localStorage.getItem('seats.v2');if(saved){const arr=JSON.parse(saved);
+arr.forEach(s => {
+  if (s.finished === undefined) s.finished = false;
+  if (s.extendCount === undefined) s.extendCount = 0;   // ★追加
+});
+
+const a=[];for(let i=1;i<=8;i++)a.push({id:`R${i}`, label:`VIP ${i}`, group:'red',  cast:'', boy:'', end:null, finished:false, extendCount:0});
+for(let i=1;i<=7;i++)a.push({id:`B${i}`, label:`ノーマル ${i}`, group:'blue', cast:'', boy:'', end:null, finished:false, extendCount:0});
+for(let i=1;i<=3;i++)a.push({id:`V${i}`, label:`超VIP ${i}`, group:'vip',   cast:'', boy:'', end:null, finished:false, extendCount:0});
 const save = () => localStorage.setItem('seats.v2', JSON.stringify(seats));
 
 /* --------- 座席座標 --------- */
@@ -311,11 +330,20 @@ function cardHTML(s){
   const num=(s.id.match(/\d+/)||[''])[0];
   const label=`${nameByGroup[s.group]||s.label} ${num}`;
   const endAt=s.end?`～ ${formatClock(s.end)}`:'';
+  const ext = (s.extendCount||0) > 0 ? `<span class="extBadge">延×${s.extendCount}</span>` : '';
+
   return `
-    <div class="line1"><span>${label}</span><span class="endAt">${endAt}</span></div>
-    <div class="timer">${s.end?formatRemain(s.end-Date.now()):(s.finished?'終了':'空')}</div>
-    <div class="meta">${(s.cast||'')}${s.boy?' ｜ '+s.boy:''}</div>`;
+    <div class="line1">
+      <span>${label}</span>
+      <span class="endAt">${endAt}</span>
+    </div>
+    <div class="timer"><span class="remain">${
+      s.end ? formatRemain(s.end-Date.now()) : (s.finished ? '終了' : '空')
+    }</span>${ext}</div>
+    <div class="meta">${(s.cast||'')}${s.boy?' ｜ '+s.boy:''}</div>
+  `;
 }
+
 function addVipSeat(s){const d=document.createElement('div');d.className='vipSeat';d.dataset.id=s.id;d.innerHTML=cardHTML(s);d.addEventListener('click',()=>openModal(s.id));vipWrap.appendChild(d);}
 function addSeatToFloor(s){const pos=POS[s.id];if(!pos)return;const d=document.createElement('div');d.className=`seat ${s.group}`;d.dataset.id=s.id;d.style.top=pos.top+'%';d.style.left=pos.left+'%';d.style.width=pos.width+'%';d.innerHTML=cardHTML(s);d.addEventListener('click',()=>openModal(s.id));floor.appendChild(d);}
 
@@ -331,7 +359,7 @@ function render(){
   seats.forEach(s=>{ if(s.group==='vip') addVipSeat(s); else addSeatToFloor(s); });
 
   floor.querySelectorAll('[data-id]').forEach(el=>{
-    const s=seats.find(x=>x.id===el.dataset.id); const t=el.querySelector('.timer');
+    const s=seats.find(x=>x.id===el.dataset.id); const t=el.querySelector('.remain');
     el.classList.remove('active','warn','danger','highlight');
     if(s.end){
       const r=s.end-Date.now();
@@ -348,7 +376,7 @@ window.seats=seats; window.render=render;
 function tick(){
   nowEl.textContent=new Date().toLocaleString('ja-JP',{hour12:false});
   floor.querySelectorAll('[data-id]').forEach(el=>{
-    const s=seats.find(x=>x.id===el.dataset.id); const t=el.querySelector('.timer');
+    const s=seats.find(x=>x.id===el.dataset.id); const t=el.querySelector('.remain');
     el.classList.remove('active','warn','danger');
     const endAtEl=el.querySelector('.endAt'); if(endAtEl) endAtEl.textContent=s.end?`～ ${formatClock(s.end)}`:'';
     if(!s.end){ t.textContent=s.finished?'終了':'空'; return; }
@@ -384,19 +412,19 @@ document.getElementById('saveMeta').addEventListener('click', ()=>{
   const s=seats.find(x=>x.id===currentId); s.cast=castI.value.trim(); s.boy=boyI.value.trim(); save(); if(window.syncSeat) window.syncSeat(s); render(); closeModal();
 });
 document.getElementById('clear').addEventListener('click', ()=>{
-  const s=seats.find(x=>x.id===currentId); s.end=null; s.cast=''; s.boy=''; s.finished=false; save(); if(window.syncSeat) window.syncSeat(s); render(); castI.value=''; boyI.value=''; manI.value=''; closeModal();
+  const s=seats.find(x=>x.id===currentId); s.end=null; s.cast=''; s.boy=''; s.finished=false; save(); s.extendCount=0; if(window.syncSeat) window.syncSeat(s); render(); castI.value=''; boyI.value=''; manI.value=''; closeModal();
 });
 document.getElementById('start').addEventListener('click', ()=>{
   const v=Number(manI.value); if(!v||v<=0) return alert('分数を入力してください');
-  const s=seats.find(x=>x.id===currentId); s.cast=castI.value.trim(); s.boy=boyI.value.trim(); s.end=Date.now()+v*60*1000; s.finished=false; save(); if(window.syncSeat) window.syncSeat(s); render(); closeModal();
+  const s=seats.find(x=>x.id===currentId); s.cast=castI.value.trim(); s.boy=boyI.value.trim(); s.end=Date.now()+v*60*1000; s.finished=false; save(); s.extendCount=0; if(window.syncSeat) window.syncSeat(s); render(); closeModal();
 });
 document.querySelectorAll('button.quick').forEach(b=>b.addEventListener('click', ()=>{
   const mins=Number(b.dataset.min); const s=seats.find(x=>x.id===currentId);
-  s.cast=castI.value.trim(); s.boy=boyI.value.trim(); s.end=Date.now()+mins*60*1000; s.finished=false; save(); if(window.syncSeat) window.syncSeat(s); render(); closeModal();
+  s.cast=castI.value.trim(); s.boy=boyI.value.trim(); s.end=Date.now()+mins*60*1000; s.finished=false; save(); s.extendCount=0; if(window.syncSeat) window.syncSeat(s); render(); closeModal();
 }));
 document.querySelectorAll('button.extend').forEach(b=>b.addEventListener('click', ()=>{
   const mins=Number(b.dataset.min); const s=seats.find(x=>x.id===currentId);
-  const base=s.end && s.end>Date.now()? s.end:Date.now(); s.end=base+mins*60*1000; s.finished=false;
+  const base=s.end && s.end>Date.now()? s.end:Date.now(); s.end=base+mins*60*1000; s.finished=false; s.extendCount = (s.extendCount||0) + 1;   
   if(!s.cast) s.cast=castI.value.trim(); if(!s.boy) s.boy=boyI.value.trim();
   save(); if(window.syncSeat) window.syncSeat(s); render(); closeModal();
 }));
