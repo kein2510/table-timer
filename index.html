@@ -299,16 +299,29 @@ let dutyMap = JSON.parse(localStorage.getItem('staff.duty.map') || '{}');
 window.staff = staff; window.dutyMap = dutyMap;
 
 /* ================= 席データ ================= */
-const seats = (()=>{const saved=localStorage.getItem('seats.v2');if(saved){const arr=JSON.parse(saved);
-arr.forEach(s => {
-  if (s.finished === undefined) s.finished = false;
-  if (s.extendCount === undefined) s.extendCount = 0;   // ★追加
-});
-
-const a=[];for(let i=1;i<=8;i++)a.push({id:`R${i}`, label:`VIP ${i}`, group:'red',  cast:'', boy:'', end:null, finished:false, extendCount:0});
-for(let i=1;i<=7;i++)a.push({id:`B${i}`, label:`ノーマル ${i}`, group:'blue', cast:'', boy:'', end:null, finished:false, extendCount:0});
-for(let i=1;i<=3;i++)a.push({id:`V${i}`, label:`超VIP ${i}`, group:'vip',   cast:'', boy:'', end:null, finished:false, extendCount:0});
+const seats = (() => {
+  const saved = localStorage.getItem('seats.v2');
+  if (saved) {
+    const arr = JSON.parse(saved);
+    arr.forEach(s => {
+      if (s.finished === undefined) s.finished = false;
+      if (s.extendCount === undefined) s.extendCount = 0; // ★追加
+    });
+    return arr; // ★忘れずに返す
+  }
+  // 保存が無いときの初期値
+  const a = [];
+  for (let i = 1; i <= 8; i++)
+    a.push({ id:`R${i}`, label:`VIP ${i}`, group:'red',  cast:'', boy:'', end:null, finished:false, extendCount:0 });
+  for (let i = 1; i <= 7; i++)
+    a.push({ id:`B${i}`, label:`ノーマル ${i}`, group:'blue', cast:'', boy:'', end:null, finished:false, extendCount:0 });
+  for (let i = 1; i <= 3; i++)
+    a.push({ id:`V${i}`, label:`超VIP ${i}`, group:'vip',   cast:'', boy:'', end:null, finished:false, extendCount:0 });
+  return a;
+})();
 const save = () => localStorage.setItem('seats.v2', JSON.stringify(seats));
+
+
 
 /* --------- 座席座標 --------- */
 const POS={R8:{top:15,left:25,width:13},R7:{top:15,left:39,width:13},R6:{top:15,left:53,width:13},R5:{top:15,left:67,width:13},
@@ -412,15 +425,15 @@ document.getElementById('saveMeta').addEventListener('click', ()=>{
   const s=seats.find(x=>x.id===currentId); s.cast=castI.value.trim(); s.boy=boyI.value.trim(); save(); if(window.syncSeat) window.syncSeat(s); render(); closeModal();
 });
 document.getElementById('clear').addEventListener('click', ()=>{
-  const s=seats.find(x=>x.id===currentId); s.end=null; s.cast=''; s.boy=''; s.finished=false; save(); s.extendCount=0; if(window.syncSeat) window.syncSeat(s); render(); castI.value=''; boyI.value=''; manI.value=''; closeModal();
+  const s=seats.find(x=>x.id===currentId); s.end=null; s.cast=''; s.boy=''; s.finished=false; s.extendCount=0; save(); if(window.syncSeat) window.syncSeat(s); render(); castI.value=''; boyI.value=''; manI.value=''; closeModal();
 });
 document.getElementById('start').addEventListener('click', ()=>{
   const v=Number(manI.value); if(!v||v<=0) return alert('分数を入力してください');
-  const s=seats.find(x=>x.id===currentId); s.cast=castI.value.trim(); s.boy=boyI.value.trim(); s.end=Date.now()+v*60*1000; s.finished=false; save(); s.extendCount=0; if(window.syncSeat) window.syncSeat(s); render(); closeModal();
+  const s=seats.find(x=>x.id===currentId); s.cast=castI.value.trim(); s.boy=boyI.value.trim(); s.end=Date.now()+v*60*1000; s.finished=false; s.extendCount=0; save(); if(window.syncSeat) window.syncSeat(s); render(); closeModal();
 });
 document.querySelectorAll('button.quick').forEach(b=>b.addEventListener('click', ()=>{
   const mins=Number(b.dataset.min); const s=seats.find(x=>x.id===currentId);
-  s.cast=castI.value.trim(); s.boy=boyI.value.trim(); s.end=Date.now()+mins*60*1000; s.finished=false; save(); s.extendCount=0; if(window.syncSeat) window.syncSeat(s); render(); closeModal();
+  s.cast=castI.value.trim(); s.boy=boyI.value.trim(); s.end=Date.now()+mins*60*1000; s.finished=false; s.extendCount=0; save(); if(window.syncSeat) window.syncSeat(s); render(); closeModal();
 }));
 document.querySelectorAll('button.extend').forEach(b=>b.addEventListener('click', ()=>{
   const mins=Number(b.dataset.min); const s=seats.find(x=>x.id===currentId);
