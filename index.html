@@ -5,255 +5,3187 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ALEXANDRITE</title>
   <link rel="icon" href="data:," />
-  <style>
-    :root{
-      --bg:#f4f6f8; --panel:#fff; --text:#111;
-      --red:#e74c3c; --blue:#2e86de; --vip:#9b59b6;
-      --ok:#e7ffe7; --warn:#fff3cd; --danger:#ffe0e0; --gold:#ffdd57;
-      --staff-on-bg:#e6f4ea; --staff-on-border:#34a853; --staff-on-text:#0b6630;
-      --staff-busy-bg:#fff3cd; --staff-busy-border:#f59e0b; --staff-busy-text:#7a4e00;
-      --staff-off-bg:#f1f5f9; --staff-off-border:#cbd5e1; --staff-off-text:#94a3b8;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Arial,sans-serif}
-    header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 14px;background:#1f1f23;color:#fff;position:sticky;top:0;z-index:5}
-    header h1{margin:0;font-size:18px}
-    .toolbar{display:flex;gap:8px;align-items:center}
-    .toolbar input{padding:8px;border-radius:8px;border:1px solid #ccc;min-width:220px}
-    .now{opacity:.85}
 
-    /* タブ */
-    .top-tabs{display:inline-flex;gap:.5rem;margin-left:1rem}
-    .top-tabs .tab{
-      padding:.35rem .8rem;border:1px solid #ddd;border-radius:999px;background:#fff;
-      color:#111 !important;text-decoration:none;display:inline-block
-    }
-    .top-tabs .tab.active{box-shadow:0 1px 4px #0001;font-weight:700}
+<style>
 
-    main{padding:12px;display:block}
-    .page{display:none}
+/* ====== THEME TOKENS（ここを触れば全体の色が変わる） ====== */
+:root{
+  /* === テキスト色（明→弱） === */
+  --text-strong: #f3f4f6;   /* 主テキスト：本文/見出し */
+  --text-muted:  #cbd5e1;   /* 補助テキスト：説明/サブ情報 */
+  --text-weak:   #94a3b8;   /* さらに弱い：注釈/淡いUI */
 
-    /* 見出しの余白微調整（任意） */
-  header h1{ margin:0; font-size:18px; line-height:1; }
+  /* === パネル（大きめの箱＝ページ内カード） === */
+  --panel-rgb: 12 12 14;    /* パネル基調のRGB（スペース区切り） */
+  --panel-a:   .78;         /* パネル不透明度 */
+  --panel-blur:6px;         /* ガラスぼかし量（0で無効） */
+  --panel-bd:  rgba(255,255,255,.09); /* パネル枠線 */
 
-      /* 追加：ブランド並び用 */
-  .brand{
-    display:flex;
-    align-items:center;
-    gap:10px;
-  }
-  .brand .brand-mark{
-    height:34px;        /* ヘッダーの高さに合わせて良い感じのサイズ */
-    width:34px;
-    object-fit:contain; /* 正方形に収める */
-    border-radius:50%;  /* 円形に見せる（要らなければ削除OK） */
-    /* お好み：わずかに立体感 */
-    filter: drop-shadow(0 1px 1px rgba(0,0,0,.25));
-  }
+  /* === カード（席カード/小ブロック） === */
+  --card-rgb:  18 18 22;    /* 小ブロックの基調色 */
+  --card-a:    .86;         /* 小ブロックの不透明度 */
+  --card-bd:   rgba(255,255,255,.12); /* 小ブロックの枠線 */
 
-    /* Floor */
-    .floor{
-      position:relative;background:var(--panel);border:1px solid #ddd;border-radius:12px;
-      overflow:hidden;padding:4px;min-height:750px;
-    }
-    .legend{position:absolute;left:8px;top:8px;display:flex;gap:10px;flex-wrap:wrap;font-size:12px;opacity:.9;background:#fff9;border-radius:8px;padding:6px}
-    .dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid #999}
-    .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.danger{background:var(--danger)} .dot.empty{background:#eee}
-    .seat{
-      position:absolute;background:#fff;border:2px solid #bbb;border-radius:10px;
-      padding:6px;min-height:64px;min-width:80px;cursor:pointer;
-      display:flex;flex-direction:column;gap:4px;transition:transform .05s ease, box-shadow .1s, background .2s;
-      box-shadow:0 1px 0 #0001;
-    }
-    .seat:hover{transform:translateY(-1px)}
-    .seat.red{border-color:var(--red)}
-    .seat.blue{border-color:var(--blue)}
-    .seat.active{background:var(--ok)} .seat.warn{background:var(--warn)} .seat.danger{background:var(--danger)}
-    .seat.highlight{box-shadow:0 0 0 3px var(--gold) inset}
-    .line1{display:flex;justify-content:space-between;align-items:center;font-weight:700}
-    .line1 .endAt{font-weight:700;font-size:18px;opacity:.8;margin-left:10px;white-space:nowrap}
-    .timer{font-size:18px;font-weight:800}
-    .meta{font-size:18px;line-height:1.25;opacity:.95;overflow-wrap:anywhere}
+  /* === 入力フィールド（input/select/textarea） === */
+  --field-rgb: 24 24 28;    /* 入力欄の基調色 */
+  --field-a:   .92;         /* 入力欄の不透明度（やや不透明） */
+  --field-bd:  rgba(255,255,255,.16); /* 入力欄の枠線 */
+  --ph-color:  #9aa4b2;     /* プレースホルダー文字色 */
 
-    /* VIP row */
-    .vipRow{position:absolute; left:15%; right:15%; bottom:7%; display:flex; gap:12px; z-index:2;}
-    .vipSeat{
-      background:#fff;border:2px dashed var(--vip);border-radius:12px;
-      padding:10px;min-height:100px;flex:1;cursor:pointer;display:flex;flex-direction:column;gap:6px;
-    }
-    .vipSeat.active{background:var(--ok)} .vipSeat.warn{background:var(--warn)} .vipSeat.danger{background:var(--danger)}
-    .vipSeat .timer{font-size:22px}
+  /* === チップ/バッジ（pillボタン等） === */
+  --chip-rgb:  26 26 30;    /* チップの基調色 */
+  --chip-a:    .88;         /* チップの不透明度 */
+  --chip-bd:   rgba(255,255,255,.12); /* チップの枠線 */
 
-    /* Backstage */
-    .backstage{background:var(--panel);border:1px solid #ddd;border-radius:12px;padding:10px;margin-top:12px}
-    .backstage h2{margin:0 0 8px;font-size:16px}
-    .legend-staff{font-size:12px;opacity:.8;display:flex;gap:12px;align-items:center}
-    .dotS{width:10px;height:10px;border-radius:50%;display:inline-block}
-    .dotS.on{background:#145768} .dotS.busy{background:#6b480a} .dotS.off{background:#9ca3af}
-    .roster{display:flex;flex-wrap:wrap;gap:8px}
-    .staffChip{padding:6px 10px;border-radius:999px;border:1px solid #cbd5e1;background:#f8fafc;cursor:pointer;font-size:14px}
-    .staffChip.on{background:var(--staff-on-bg);border:1px solid var(--staff-on-border);color:var(--staff-on-text);box-shadow:0 0 0 1px #0e3d49 inset}
-    .staffChip.busy{background:var(--staff-busy-bg);border:1px solid var(--staff-busy-border);color:var(--staff-busy-text);box-shadow:0 0 0 1px #3a2706 inset}
-    .staffChip.off{background:var(--staff-off-bg);border:1px solid var(--staff-off-border);color:var(--staff-off-text)}
-    .staffChip.selected{box-shadow:0 0 0 2px #111 inset;font-weight:700}
-    .staffSectionTitle{flex-basis:100%;margin-top:6px;font-size:12px;color:#475569}
+  /* === アクセント/状態色 === */
+  --accent-red:   #e74c3c;  /* 強調：赤（警告/重要） */
+  --accent-blue:  #2e86de;  /* 強調：青（情報） */
+  --accent-vip:   #9b59b6;  /* VIP/超VIPの枠色（点線など） */
+  --state-ok:     #22c55e;  /* OK/アクティブ点灯 */
+  --state-warn:   #f59e0b;  /* 注意/警告 */
+  --state-danger: #ef4444;  /* 危険/エラー */
+  --state-empty:  #374151;  /* 空席/未設定などの点表示 */
+  --shine-gold:   #ffdd57;  /* 強調の内側ハイライト */
 
-    /* モーダル（卓編集） */
-    .modalWrap{position:fixed;inset:0;background:#0008;display:none;place-items:center;z-index:9}
-    .modal{background:#fff;border-radius:14px;padding:16px;min-width:300px;max-width:92vw;box-shadow:0 20px 60px #0006}
-    .modal h3{margin:0 0 10px 0}
-    .row{display:flex;gap:8px;margin:8px 0}
-    .row input{flex:1;padding:10px;border-radius:8px;border:1px solid #ccc}
-    .btns{display:flex;flex-wrap:wrap;gap:8px}
-    button{border:none;border-radius:10px;padding:10px 14px;cursor:pointer;background:#111;color:#fff}
-    button.secondary{background:#e5e7eb;color:#111}
-    button.danger{background:#dc2626}
-    .chips button{background:#fff;border:1px solid #111;color:#111}
-    .label{font-weight:700;padding:6px 10px;border-radius:999px;font-size:12px;line-height:1;align-self:center;white-space:nowrap}
-    .label-extend{color:var(--vip);border:1px solid var(--vip);background:#f7ecff}
-    .twoCols{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
-    .suggBlock{display:flex;flex-direction:column;gap:4px;flex:1}
-    .suggTitle{font-size:12px;color:#6b7280}
-    .suggList{display:flex;flex-wrap:wrap;gap:6px}
-    .suggList .staffChip{padding:4px 8px;font-size:12px}
+  /* === 状態時の淡い背景（行のハイライト用） === */
+  --bg-ok:     #16a34a1a;   /* OK行の薄緑背景 */
+  --bg-warn:   #f59e0b1a;   /* 警告行の薄橙背景 */
+  --bg-danger: #ef44441a;   /* 危険行の薄赤背景 */
 
-    /* 売上入力 */
-    #salesSection{margin-top:12px}
-    .sales-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
-    .sales-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+  /* === ページ背景/寸法 === */
+  --bg-dark:   12 12 14;        /* ページ最終背景 */
+  --headerH:   60px;        /* 固定ヘッダー高さ */
+  --hero-posY: 30%;         /* 中央ロゴの縦位置 */
 
-    /* ← NEW: 選択“マス”と選択モーダル */
-    .pickerField{
-      border:1px solid #dcdfe3;background:#f9fafb;border-radius:12px;
-      padding:8px; min-height:46px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;
-      cursor:pointer;
-    }
-    .pickerField.empty{color:#94a3b8}
-    .pill{padding:4px 10px;border-radius:999px;border:1px solid #cbd5e1;background:#fff;font-size:12px}
-    .pickerWrap{position:fixed;inset:0;background:#0008;display:none;place-items:center;z-index:10}
-    .pickerPanel{background:#fff;border-radius:14px;padding:14px;max-width:92vw;max-height:80vh;overflow:auto;box-shadow:0 20px 60px #0006}
-    .pickerHead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
-    .pickerBtns{display:flex;gap:8px;flex-wrap:wrap}
-    .sales-row{display:grid;grid-template-columns:1.2fr .6fr .6fr .8fr auto;gap:8px;align-items:center;margin:6px 0}
-    .sales-row select,.sales-row input{padding:.45rem;border:1px solid #dcdfe3;border-radius:.6rem}
-    .sales-yen{min-width:6em;text-align:right;padding:.45rem .6rem;background:#f8fafc;border:1px solid #e5e7eb;border-radius:.6rem}
-    .sales-actions{display:flex;gap:8px;margin-top:10px}
-    .sales-pill{padding:.35rem .6rem;border:1px dashed #cbd5e1;border-radius:999px;background:#f9fafb;cursor:pointer}
-    .sales-total{font-size:1.1rem;font-weight:700;text-align:right;margin-top:.5rem}
+  /* === 罫線（表や区切りの共通） === */
+  --bd-light: rgba(255,255,255,.08);  /* 薄い実線 */
+  --bd-dash:  rgba(255,255,255,.10);  /* 薄い破線 */
 
-    @media(max-width:900px){
-      .toolbar input{min-width:160px}
-      .seat{min-width:72px;min-height:60px}
-      .sales-grid{grid-template-columns:1fr}
-    }
-
-    /* 売上入力のボタン文字が消える問題の修正 */
-    .sales-pill{ color:#111 !important; }                 /* 追加行ボタン/削除ボタン/更新ボタンの文字を黒に */
-    .sales-row .sales-pill{ color:#111 !important; }      /* 各明細行の「－ 削除」を黒に */
-    #submitSales.sales-pill{ background:#111; color:#fff !important; border-color:#111; } /* 送信は黒ボタンで目立たせる */
-
-    /* 延長バッジ */
-    .extBadge{
-    display:inline-block;
-    margin-left:8px;
-    padding:2px 6px;
-    border-radius:999px;
-    border:1px solid #6b7280;
-    font-size:12px;
-    line-height:1;
-    opacity:.85;
-    background:#fff;
-    }
+  /* === 見出し（サイズだけ統一、色はテキスト色を使用） === */
+  --heading-size:   20px;   /* 大見出し */
+  --heading-weight: 800;    /* 大見出しウエイト */
+  --subheading-size:14px;   /* 小見出し */
+}
 
 
-  </style>
+/* =========================
+   BASE（背景・文字）
+   ========================= */
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0; color:var(--text-strong);
+  font-family:system-ui, Segoe UI, Arial, sans-serif;
+  overflow-x:hidden; position:relative;
+  background: radial-gradient(circle at 50% 45%, #1a1a1a 0%, #0f0f0f 55%, var(--bg-dark) 100%);
+  background-attachment: fixed;
+}
+/* 背景ロゴ/トップライト（装飾。UI非干渉） */
+html::before{
+  content:""; position:fixed; left:0; right:0; bottom:0; top:var(--headerH);
+  z-index:0; pointer-events:none;
+  background:url("alexandrite-logo.png") center/64vmin no-repeat;
+  filter:blur(30px) brightness(.55) saturate(1.2);
+  opacity:.45; transform:translateZ(0);
+}
+body::before{
+  content:""; position:fixed; left:0; right:0; bottom:0; top:var(--headerH);
+  z-index:1; pointer-events:none;
+  background-image:url("alexandrite-haikei2.png");
+  background-repeat:no-repeat; background-position:50% var(--hero-posY); background-size:cover;
+  filter: drop-shadow(0 0 30px rgba(255,60,60,.25)) drop-shadow(0 0 12px rgba(255,200,120,.15));
+}
+body::after{
+  content:""; position:fixed; left:0; right:0; bottom:0; top:var(--headerH);
+  z-index:1; pointer-events:none;
+  background:linear-gradient(to bottom, rgba(255,255,255,.10), rgba(0,0,0,.75) 60%);
+  opacity:.18; mix-blend-mode:screen;
+}
+@media (max-width:900px){ body{ background-attachment:scroll; } }
+
+/* =========================
+   HEADER / TABS（白UIと同寸）
+   ========================= */
+header{
+  display:flex; gap:12px; align-items:center; justify-content:space-between;
+  padding:10px 14px; background:#1f1f23; color:#fff; position:sticky; top:0; z-index:5;
+}
+header h1{ margin:0; font-size:18px; line-height:1; }
+.toolbar{ display:flex; gap:8px; align-items:center; }
+.toolbar input{
+  padding:8px; border-radius:8px; min-width:220px;
+  background:rgb(var(--field-rgb)/var(--field-a)); color:var(--text-strong);
+  border:1px solid var(--field-bd); outline:none;
+}
+.toolbar input::placeholder{ color:var(--ph-color); }
+.now{ opacity:.85; }
+
+.top-tabs{ display:inline-flex; gap:.5rem; margin-left:1rem; }
+.top-tabs .tab{
+  padding:.35rem .8rem; border-radius:999px; text-decoration:none;
+  background:rgb(var(--chip-rgb)/var(--chip-a)); color:var(--text-strong)!important;
+  border:1px solid var(--chip-bd);
+}
+.top-tabs .tab.active{ box-shadow:0 1px 4px #0006; font-weight:700; }
+
+/* =========================
+   LAYOUT（白UIの骨格を踏襲）
+   ========================= */
+main{ padding:12px; display:block; position:relative; z-index:3; }
+.page{ display:none; }
+#pageTimer{ display:block; }
+
+.brand{ display:flex; align-items:center; gap:10px; }
+.brand .brand-mark{
+  height:34px; width:34px; object-fit:contain; border-radius:50%;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.25));
+}
+
+/* =========================
+   PANELS（floor/解析/モーダル/ピッカー/凡例）
+   ========================= */
+.floor,
+.backstage,
+.anaFilter,
+.payoutsPanel,
+.tableLike,
+.pickerPanel,
+.modal,
+.legend{
+  background: rgb(var(--panel-rgb) / var(--panel-a));
+  color: var(--text-strong);
+  backdrop-filter: blur(var(--panel-blur));
+  -webkit-backdrop-filter: blur(var(--panel-blur));
+  border:1px solid var(--panel-bd);
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+}
+.floor{
+  position:relative; border-radius:12px; overflow:hidden; padding:4px; min-height:750px;
+}
+.legend{
+  position:absolute; left:8px; top:8px; display:flex; gap:10px; flex-wrap:wrap;
+  font-size:12px; border-radius:8px; padding:6px;
+}
+.dot{ width:10px; height:10px; border-radius:50%; display:inline-block; border:1px solid #999; }
+.dot.ok{ background:var(--state-ok); } .dot.warn{ background:var(--state-warn); }
+.dot.danger{ background:var(--state-danger); } .dot.empty{ background:var(--state-empty); }
+
+/* =========================
+   SEATS（絶対配置＝白UIと一致）
+   ========================= */
+.seat,
+.vipSeat{
+  /* ★ レイアウトは白UIのまま。座席要素は HTML 側の left/top をそのまま尊重 */
+  position:absolute; /* ← 必須（HTML内の座標に従う） */
+  background: rgb(var(--card-rgb) / var(--card-a));
+  color: var(--text-strong);
+  border:2px solid var(--card-bd);        /* ← 通常席は落ち着いた実線 */
+  border-radius:10px; padding:6px; min-height:64px; min-width:80px; cursor:pointer;
+  display:flex; flex-direction:column; gap:4px;
+  transition:transform .05s, box-shadow .1s, background .2s;
+  box-shadow:0 1px 0 rgba(0,0,0,.22);
+}
+/* VIP/超VIP だけ点線・紫（白UIと同印象） */
+.vipSeat{ border:2px dashed var(--accent-vip); }
+
+.seat:hover{ transform:translateY(-1px); }
+.seat.red{  border-color:var(--accent-red); }
+.seat.blue{ border-color:var(--accent-blue); }
+.seat.active{  background:var(--bg-ok); }
+.seat.warn{    background:var(--bg-warn); }
+.seat.danger{  background:var(--bg-danger); }
+.seat.highlight{ box-shadow:0 0 0 3px var(--shine-gold) inset; }
+
+.line1{ display:flex; justify-content:space-between; align-items:center; font-weight:700; }
+.line1 .endAt{ font-weight:700; font-size:18px; opacity:.9; margin-left:10px; white-space:nowrap; }
+.timer{ font-size:18px; font-weight:800; }
+.meta{ font-size:18px; line-height:1.25; opacity:.95; overflow-wrap:anywhere; }
+
+
+/* VIP 行（横一列：白UI準拠） */
+.vipRow{
+  position:absolute; left:15%; right:15%; bottom:7%;
+  display:flex; gap:12px; z-index:2;
+}
+
+.vipRow .vipSeat{ position:relative; border:2px dashed var(--accent-vip);border-radius:12px; padding:10px;min-height:100px;flex:1;cursor:pointer;display:flex;flex-direction:column;gap:6px; }
+
+
+  
+.vipSeat.active{background:var(--bg-ok)} .vipSeat.warn{background:var(--bg-warn)} .vipSeat.danger{background:var(--bg-danger)}
+.vipSeat .timer{ font-size:22px; }
+
+/* ★ 超VIP 行（左下に 1→3 で横並び） */
+/*.ultraRow{
+  position:absolute; left:16px; bottom:16px; display:flex; gap:12px; z-index:2;
+}
+.ultraRow .vipSeat{ position:relative; border: 2px dashed var(--accent-vip); border-radius:12px; min-width:84px; min-height:64px; padding:8px 10px; }
+.ultraRow .active{background:var(--ok)} .ultraRow.warn{background:var(--warn)} .ultraRow.danger{background:var(--danger)}
+.ultraRow .timer{ font-size:22px; }*/
+
+/* =========================
+   ROSTER / 控室（白UI同寸・色だけダーク）
+   ========================= */
+.backstage{ border-radius:12px; padding:10px; margin-top:12px; }
+.backstage h2{ margin:0 0 8px; font-size:16px; }
+.legend-staff{ font-size:12px; opacity:.85; display:flex; gap:12px; align-items:center; }
+.dotS{ width:10px; height:10px; border-radius:50%; display:inline-block; }
+.dotS.on{ background:#34d399; } .dotS.busy{ background:#f59e0b; } .dotS.off{ background:#9ca3af; }
+
+.roster{ display:flex; flex-wrap:wrap; gap:8px; }
+.staffChip{
+  padding:6px 10px; border-radius:999px; cursor:pointer; font-size:14px;
+  background:rgb(var(--chip-rgb)/var(--chip-a)); color:var(--text-strong);
+  border:1px solid var(--chip-bd);
+}
+.staffChip.on{   box-shadow:0 0 0 1px #34d399 inset; }
+.staffChip.busy{ box-shadow:0 0 0 1px #f59e0b inset; }
+.staffChip.off{  opacity:.9; }
+.staffChip.selected{ box-shadow:0 0 0 2px #fff2 inset; font-weight:700; }
+.staffSectionTitle{ flex-basis:100%; margin-top:6px; font-size:12px; color:var(--text-muted); }
+
+/* =========================
+   MODAL / PICKER
+   ========================= */
+.modalWrap{ position:fixed; inset:0; background:#0008; display:none; place-items:center; z-index:9; }
+.modal{
+  border-radius:14px; padding:16px; min-width:300px; max-width:92vw; box-shadow:0 20px 60px #0006;
+  background: rgb(var(--panel-rgb)/var(--panel-a)); border:1px solid var(--panel-bd);
+}
+.modal h3{ margin:0 0 10px; }
+.row{ display:flex; gap:8px; margin:8px 0; }
+.row input{
+  flex:1; padding:10px; border-radius:8px; outline:none;
+  background:rgb(var(--field-rgb)/var(--field-a)); color:var(--text-strong);
+  border:1px solid var(--field-bd);
+}
+.btns{ display:flex; flex-wrap:wrap; gap:8px; }
+button, .btn{ border:none; border-radius:10px; padding:10px 14px; cursor:pointer; background:rgb(var(--chip-rgb)/var(--chip-a)); color:var(--text-strong); border:1px solid var(--chip-bd); }
+button.secondary{ background:#2b2f36; color:#fff; }
+button.danger{ background:#dc2626; color:#fff; }
+.chips button{ background:rgb(var(--chip-rgb)/var(--chip-a)); border:1px solid var(--chip-bd); color:var(--text-strong); }
+.label{ font-weight:700; padding:6px 10px; border-radius:999px; font-size:12px; line-height:1; align-self:center; white-space:nowrap; }
+.label-extend{ color:var(--accent-vip); border:1px solid var(--accent-vip); background:#f7ecff10; }
+
+.pickerField{
+  border:1px solid var(--field-bd); background:rgb(var(--field-rgb)/var(--field-a));
+  color:var(--text-strong); border-radius:12px; padding:8px; min-height:46px;
+  display:flex; gap:6px; align-items:center; flex-wrap:wrap; cursor:pointer;
+}
+.pickerField.empty{ color:var(--text-weak); }
+.pill{
+  padding:4px 10px; border-radius:999px; font-size:12px;
+  background:rgb(var(--chip-rgb)/var(--chip-a)); color:var(--text-strong);
+  border:1px solid var(--chip-bd);
+}
+.pickerWrap{ position:fixed; inset:0; background:#0008; display:none; place-items:center; z-index:10; }
+.pickerPanel{
+  border-radius:14px; padding:14px; max-width:92vw; max-height:80vh; overflow:auto;
+  background:rgb(var(--panel-rgb)/var(--panel-a)); border:1px solid var(--panel-bd);
+  box-shadow:0 20px 60px #0006;
+}
+
+/* === ① 席編集モーダル：出勤キャスト／出勤ボーイを左右 1:1 に === */
+.modal .row .suggBlock{
+  flex: 1 1 0;      /* ← これで2カラムがピッタリ半分ずつ */
+  min-width: 0;
+}
+.suggBlock .suggTitle{
+  font-size:12px; color:var(--text-muted); margin-bottom:6px;
+}
+.suggBlock .suggList{
+  display:flex; flex-wrap:wrap; gap:8px;
+  padding:8px; border:1px solid var(--field-bd); border-radius:10px;
+  background:rgb(var(--field-rgb)/var(--field-a));
+  max-height:220px; overflow:auto;       /* ← 枠内でスクロール */
+}
+
+/* =========================
+   SALES / LISTS / TABLE（色だけ暗色化）
+   ========================= */
+.extBadge{
+  display:inline-block; margin-left:8px; padding:2px 6px; border-radius:999px;
+  border:1px solid #6b7280; color:var(--text-strong); background:#ffffff12;
+  font-size:12px; line-height:1; opacity:.95;
+}
+.sales-pill, .sales-row .sales-pill{ color:var(--text-strong)!important; }
+button.sales-pill{
+  background:rgb(var(--chip-rgb)/var(--chip-a))!important;
+  color:var(--text-strong)!important; border:1px solid var(--chip-bd)!important;
+}
+button.sales-pill:hover{ filter:brightness(1.05); }
+
+.salesTabHead{ display:flex; gap:8px; margin:8px 0 4px; }
+.salesTabBtn{
+  padding:6px 10px; border-radius:999px; cursor:pointer;
+  background:rgb(var(--chip-rgb)/var(--chip-a)); color:var(--text-strong);
+  border:1px solid var(--chip-bd);
+}
+.salesTabBtn.active{ background:#111; color:#fff; }
+
+#seatSales{ display:none; }
+#seatSales.show{ display:flex; flex-direction:column; max-height:72vh; }
+#seatSalesList{ flex:1 1 auto; overflow:auto; overscroll-behavior:contain; max-height:calc(var(--rowH,48px)*8 + 8px); }
+#salesLines{   max-height:calc(var(--rowH,48px)*8 + 8px); overflow:auto; overscroll-behavior:contain; }
+#seatSalesList::-webkit-scrollbar, #salesLines::-webkit-scrollbar{ width:10px; }
+#seatSalesList::-webkit-scrollbar-thumb, #salesLines::-webkit-scrollbar-thumb{ background:#374151; border-radius:8px; }
+
+/* classでもidでも動くように両対応 */
+.seatSales.show,
+#seatSales.show{ display:flex; flex-direction:column; max-height:72vh; }
+/* 売上タブが show の時は、同じ親内の後続セクションを非表示に */
+.seatSales.show ~ *,
+#seatSales.show ~ *{ display:none !important; }
+
+.page h2, .salesTitle, .payrollTitle, .payoutsHeadTitle{
+  color: var(--text-strong);
+  font-size: var(--heading-size);
+  font-weight: var(--heading-weight);
+  letter-spacing: .02em;
+  margin: 8px 0 10px;
+}
+
+.page h3, .sectionTitle-sub{
+  color: var(--text-muted);
+  font-size: var(--subheading-size);
+  font-weight: 700;
+  margin: 6px 0;
+}
+
+/* === ② 売上一覧→日別→「売上を編集」モーダルのスクロール改善 === */
+/* モーダル本体は画面高さに収め、はみ出す分はモーダル内スクロール */
+#salesEditWrap .modal{
+  max-height: 90vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+/* 明細リストは“縦可変の専用スクロール域”にする（下のボタンが隠れない） */
+#salesEditWrap #seList{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  max-height: 50vh;    /* 端末に合わせて見やすい高さに */
+}
+/* 一番下の合計＆保存バーが常に見えるよう軽く固定（任意） */
+#salesEditWrap .salesFoot{
+  position: sticky;
+  bottom: 0;
+  background: rgb(var(--panel-rgb)/var(--panel-a));
+  border-top: 1px solid var(--panel-bd);
+  padding-top: 8px;
+}
+
+/* ==== 給料支払い：日別ビューのテーブル・入力の暗色スキン ==== */
+.payoutsPanel table,
+.payoutsPanel thead,
+.payoutsPanel tbody,
+.payoutsPanel tr,
+.payoutsPanel th,
+.payoutsPanel td{
+  background: transparent !important;
+  color: var(--text-strong) !important;
+  border-color: var(--bd-dash) !important;
+}
+
+/* ヘッダー帯は薄反転 */
+.payoutsPanel thead th{
+  background: #ffffff10 !important;
+  font-weight: 700;
+}
+
+/* 行の区切り（破線で軽く） */
+.payoutsPanel tr{
+  border-bottom: 1px dashed var(--bd-dash);
+}
+
+/* 金額入力などのフィールドを統一 */
+.payoutsPanel input[type="text"],
+.payoutsPanel input[type="number"],
+.payoutsPanel input[type="search"],
+.payoutsPanel input[type="tel"]{
+  background: rgb(var(--field-rgb)/var(--field-a)) !important;
+  color: var(--text-strong) !important;
+  border: 1px solid var(--field-bd) !important;
+  border-radius: 8px !important;
+  padding: 8px 10px !important;
+  outline: none;
+}
+
+/* 右寄せが欲しい金額セル */
+.payoutsPanel .tRight,
+.payoutsPanel td.amount,
+.payoutsPanel input[type="number"]{
+  text-align: right;
+}
+
+/* 集計行（最下段）の帯をわずかに強調 */
+.payoutsPanel .summaryRow td{
+  background: #ffffff08 !important;
+  font-weight: 800;
+}
+
+/* ==== パネル残白の最終キャッチ ==== */
+#pageSales .salesListWrap,
+#pageSales .salesDayWrap,
+#pagePayroll .payrollWrap,
+#pagePayroll .payrollDayWrap,
+#pagePayroll .payoutsPanel,
+#pageAdmin .tableLike{
+  background: rgb(var(--panel-rgb)/var(--panel-a)) !important;
+  border: 1px solid var(--panel-bd) !important;
+  color: var(--text-strong) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(var(--panel-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--panel-blur)) !important;
+}
+
+/* 中のカード/行が個別に白指定されている場合の強制上書き */
+#pageSales *[style*="background: #fff"],
+#pageSales *[style*="background:#fff"],
+#pagePayroll *[style*="background: #fff"],
+#pagePayroll *[style*="background:#fff"]{
+  background: rgb(var(--panel-rgb)/var(--panel-a)) !important;
+  color: var(--text-strong) !important;
+  border-color: var(--panel-bd) !important;
+}
+
+/* =========================================================
+   ▼ 給料支払い（日付選択ビュー）の “白帯” を完全吸収
+   - 画像7枚目の「上と下の白い帯」を強制ダーク化
+   - 既存のPayroll配色にだけ効くよう #pagePayroll スコープ限定
+   ========================================================= */
+
+/* コンテナ & セクション */
+#pagePayroll .payrollDayWrap,
+#pagePayroll .payrollWrap,
+#pagePayroll .payoutsPanel,
+#pagePayroll .dayBox,
+#pagePayroll .listBox,
+#pagePayroll .panelBox,
+#pagePayroll .tableLike{
+  background:rgb(var(--panel-rgb)/var(--panel-a)) !important;
+  color:var(--text-strong) !important;
+  border:1px solid var(--panel-bd) !important;
+  border-radius:12px !important;
+  backdrop-filter:blur(var(--panel-blur)) !important;
+  -webkit-backdrop-filter:blur(var(--panel-blur)) !important;
+}
+
+/* ヘッダー/フッター/見出し帯っぽい要素（命名ゆらぎを広く拾う） */
+#pagePayroll .tHead,
+#pagePayroll thead th,
+#pagePayroll .head,
+#pagePayroll .header,
+#pagePayroll [class*="Head"],
+#pagePayroll [class*="Header"],
+#pagePayroll .foot,
+#pagePayroll .footer,
+#pagePayroll [class*="Foot"],
+#pagePayroll [class*="Footer"]{
+  background:#0C0C0E10 !important;   /* 薄い反転帯（暗色） */
+  color:var(--text-strong) !important;
+  border-color:var(--panel-bd) !important;
+  font-weight:700;
+}
+
+/* 残白の最終キャッチ（inline style 直書き白も握る） */
+#pagePayroll *[style*="background:#fff"],
+#pagePayroll *[style*="background: #fff"],
+#pagePayroll *[style*="background-color:#fff"],
+#pagePayroll *[style*="background-color: #fff"],
+#pagePayroll *[style*="rgb(255, 255, 255)"]{
+  background:rgb(var(--panel-rgb)/var(--panel-a)) !important;
+  color:var(--text-strong) !important;
+  border-color:var(--panel-bd) !important;
+}
+
+/* テーブル罫線＆入力フィールドの統一 */
+#pagePayroll .tRow,
+#pagePayroll tr{ border-bottom:1px dashed var(--bd-dash) !important; }
+
+#pagePayroll input,
+#pagePayroll select,
+#pagePayroll textarea{
+  background:rgb(var(--field-rgb)/var(--field-a)) !important;
+  color:var(--text-strong) !important;
+  border:1px solid var(--field-bd) !important;
+  border-radius:8px !important;
+}
+
+/* 金額系は右寄せ */
+#pagePayroll .tRight,
+#pagePayroll td.amount,
+#pagePayroll input[type="number"]{ text-align:right; }
+
+/* =========================
+   ADMIN / FORMS
+   ========================= */
+.admin-st-list{ display:grid; gap:12px; }
+.stRow{ display:grid; grid-template-columns: 2fr 1fr auto auto; gap:16px; align-items:center; padding:8px 0; border-top:1px dashed var(--bd-dash); }
+.stRow input, .stRow select{
+  padding:12px; border-radius:12px; width:100%; font-size:14px;
+  background:rgb(var(--field-rgb)/var(--field-a)); color:var(--text-strong);
+  border:1px solid var(--field-bd);
+}
+.stRow input[disabled], .stRow select[disabled]{ background:#1b1f24; color:#a6b0bf; opacity:.9; }
+.stBtn{ white-space:nowrap; }
+
+.pdRowAdd{ display:grid; grid-template-columns: 2fr 1fr auto; gap:16px; align-items:center; padding:8px 0; border-top:1px dashed var(--bd-dash); }
+.pdRowAdd input{ padding:12px; border:1px solid var(--field-bd); border-radius:12px; background:rgb(var(--field-rgb)/var(--field-a)); color:var(--text-strong); font-size:14px; width:100%; }
+
+.pdRowList{ display:grid; grid-template-columns: 2fr 1fr auto; gap:16px; align-items:center; padding:8px 0; border-top:1px dashed var(--bd-dash); }
+.pdRowList input{ padding:12px; border:1px solid var(--field-bd); border-radius:12px; background:rgb(var(--field-rgb)/var(--field-a)); color:var(--text-strong); font-size:14px; width:100%; }
+
+/* =========================
+   給料支払い／未払い（黒ガラス統一）
+   ========================= */
+.payoutsPanel{ background:rgb(var(--panel-rgb)/var(--panel-a)); border:1px solid var(--panel-bd); border-radius:12px; padding:10px; color:var(--text-strong); }
+.payoutsHead{ display:flex; align-items:center; gap:8px; margin-bottom:6px; color:var(--text-muted); }
+
+#pageAdmin{ min-height:0; }
+#adminPayouts{ display:flex; flex-direction:column; height:100%; min-height:0; }
+#payoutsListBox{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+#payoutsHistoryBox{ flex:0 0 260px; min-height:0; }
+
+.payoutsPanel{ display:flex; flex-direction:column; min-height:0; }
+.payoutsScroll{ flex:1 1 auto; overflow:auto; max-height:none; }
+#pageAdmin.payouts-fit{ overflow:hidden; height:calc(100dvh - var(--headerH)); }
+#payoutsListBox > .payoutsPanel, #payoutsHistoryBox > .payoutsPanel{ height:100%; display:flex; flex-direction:column; }
+#payoutsHistScroll{ flex:1 1 auto; overflow:auto; max-height:none; }
+.payoutRow{ padding:8px 0; border-top:1px dashed var(--bd-dash); }
+
+#payoutsHistScroll::-webkit-scrollbar-thumb,
+.payoutsScroll::-webkit-scrollbar-thumb{ background:#374151; border-radius:8px; }
+
+/* =========================
+   Analytics（集計） – グリッド/棒グラフ/テーブルの位置と配色
+   ========================= */
+.salesListWrap,
+.salesDayWrap,
+.payrollWrap,
+.payrollDayWrap,
+.analyticsWrap,
+.analyticsCard,
+.dayBox,
+.listBox,
+.panelBox,
+.tableLike{ background: rgb(var(--panel-rgb)/var(--panel-a)) !important; border:1px solid var(--panel-bd) !important; color: var(--text-strong) !important; border-radius:12px; backdrop-filter: blur(var(--panel-blur)); -webkit-backdrop-filter: blur(var(--panel-blur)); }
+
+.anaFilter{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:10px; background:rgb(var(--panel-rgb)/var(--panel-a)); border:1px solid var(--panel-bd); border-radius:12px; padding:10px; color:var(--text-strong); }
+.anaFilter label{ display:inline-flex; gap:6px; align-items:center; background:#0f1216; border:1px solid var(--bd-light); padding:6px 8px; border-radius:8px; color:var(--text-strong); }
+.anaFilter input[type="date"]{ border:none; background:transparent; padding:4px; color:var(--text-strong); }
+.anaQuick{ display:flex; gap:6px; margin-left:auto; flex-wrap:wrap; }
+.anaH3{ margin:6px 0 6px; font-size:15px; }
+.anaH4{ margin:6px 0 6px; font-size:14px; color:var(--text-muted); }
+.anaBlock{ margin-top:12px; }
+
+.metricGrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.metricCard{ border:1px solid var(--panel-bd); border-radius:12px; padding:12px; background:rgb(var(--panel-rgb)/.60); }
+.metricValue{ font-size:20px; font-weight:800; }
+@media(max-width:900px){ .metricGrid{ grid-template-columns:1fr 1fr; } }
+
+.anaTwoCol{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media(max-width:900px){ .anaTwoCol{ grid-template-columns:1fr; } }
+
+.tHead, .tRow{ display:grid; grid-template-columns: 1fr 100px 120px; gap:8px; }
+.tHead{ background:#ffffff10 !important; font-weight:700; }
+.tCell{ padding:8px; border-bottom:1px dashed var(--bd-dash); }
+.tRight{ text-align:right; }
+
+.barRow{ display:flex; align-items:center; gap:8px; padding:8px; border-bottom:1px dashed var(--bd-dash); }
+.barLabel{ flex:0 0 180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.barWrap{ flex:1 1 auto; background:#1f2937 !important; border-radius:8px; overflow:hidden; height:14px; }
+.barFill{ height:100%; background:#cbd5e1 !important; }
+.barVal{ flex:0 0 100px; text-align:right; }
+
+/* =========================
+   MOBILE
+   ========================= */
+@media(max-width:900px){
+  .toolbar input{ min-width:160px; }
+  .seat{ min-width:72px; min-height:60px; }
+  .sales-grid{ grid-template-columns:1fr; }
+}
+
+
+
+/* =========================
+   ▼ 控室（2カラム＆検索ボックス統一）
+   ========================= */
+.backstage .rosterGrid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 8px;
+}
+.backstage .rosterHead{
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:12px; color:var(--text-muted);
+}
+.backstage .rosterSearch{
+  padding:8px; border-radius:8px; min-width:160px;
+  background: rgb(var(--field-rgb)/var(--field-a));
+  color: var(--text-strong);
+  border: 1px solid var(--field-bd);
+  outline: none;
+}
+@media (max-width:900px){
+  .backstage .rosterGrid{ grid-template-columns:1fr; }
+}
+
+/* =========================
+   ▼ 売上一覧／給料支払いなど白パネルを黒ガラス化
+   （元の白背景と競合するので !important で強制）
+   ========================= */
+/* 共通“白パネル”っぽいものを吸収して統一 */
+
+
+/* 行ヘッダー・表頭の薄い反転（白UIの視認性維持） */
+.tHead{ background:#ffffff10 !important; color:var(--text-strong) !important; }
+
+/* まだ白く残る“div一括パネル”への最後の網掛け */
+main > section, main > .panel, main .panel {
+  background: rgb(var(--panel-rgb)/var(--panel-a));
+  border: 1px solid var(--panel-bd);
+  color: var(--text-strong);
+  border-radius: 12px;
+}
+/* 既存で白背景＋薄グレー枠が直書きされている場合の強制上書き */
+*[style*="background: #fff"], *[style*="background:#fff"]{
+  background: rgb(var(--panel-rgb)/var(--panel-a)) !important;
+  color: var(--text-strong) !important;
+  border-color: var(--panel-bd) !important;
+}
+
+/* =========================
+   ▼ 細部：控室チップ・スクロール等は現状維持
+   ========================= */
+
+
+
+/* 5) 売上一覧／給料支払いの白帯＆黒文字化抜けを強制吸収 */
+#pageSales, #pagePayroll{ color:var(--text-strong) !important; }
+#pageSales .dayBox, #pageSales .listBox, #pageSales .panelBox,
+#pagePayroll .dayBox, #pagePayroll .listBox, #pagePayroll .panelBox,
+#pagePayroll .payoutsPanel, #pageSales .tableLike, #pagePayroll .tableLike{
+  background: rgb(var(--panel-rgb)/var(--panel-a)) !important;
+  border:1px solid var(--panel-bd) !important;
+  color:var(--text-strong) !important;
+  border-radius:12px !important;
+  backdrop-filter: blur(var(--panel-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--panel-blur)) !important;
+}
+/* 行ヘッダー（白っぽく残る帯） */
+#pageSales .tHead, #pagePayroll .tHead,
+#pageSales .dayBox .head, #pagePayroll .dayBox .head,
+.payoutsPanel thead th{
+  background:#ffffff10 !important;
+  color:var(--text-strong) !important;
+  font-weight:700 !important;
+}
+/* 行・罫線を暗色へ */
+#pageSales .tRow, #pagePayroll .tRow, .payoutsPanel tr{
+  border-bottom:1px dashed var(--bd-dash) !important;
+}
+/* 入力欄の白戻り対策 */
+#pageSales input, #pageSales select, #pageSales textarea,
+#pagePayroll input, #pagePayroll select, #pagePayroll textarea{
+  background:rgb(var(--field-rgb)/var(--field-a)) !important;
+  color:var(--text-strong) !important;
+  border:1px solid var(--field-bd) !important;
+  border-radius:8px !important;
+}
+/* 直書き style=background:#fff を最終上書き */
+#pageSales *[style*="background: #fff"], #pageSales *[style*="background:#fff"],
+#pagePayroll *[style*="background: #fff"], #pagePayroll *[style*="background:#fff"]{
+  background: rgb(var(--panel-rgb)/var(--panel-a)) !important;
+  color: var(--text-strong) !important;
+  border-color: var(--panel-bd) !important;
+}
+
+</style>
+
 </head>
 
 <body>
-<header>
+
+
+ <header>
   <div class="brand">
     <img class="brand-mark" src="./alexandrite-logo.png" alt="ALEXANDRITE ロゴ">
     <h1>ALEXANDRITE</h1>
   </div>
+
   <div class="toolbar">
     <input id="q" type="search" placeholder="キャスト名で検索（例: あや）" />
     <div class="now" id="now"></div>
   </div>
+
   <nav class="top-tabs">
     <a id="navTimer" class="tab active" href="#timer">卓タイマー管理</a>
-    <a id="navSales" class="tab" href="#sales">売上入力</a>
+    <a id="navAdmin" class="tab" href="#admin">幹部</a>
   </nav>
 </header>
 
-<main>
-
-  <!-- ページ①：タイマー -->
-  <section id="pageTimer" class="page">
-    <section class="floor" id="floor">
-      <div class="legend">
-        <span><i class="dot empty"></i>空席</span>
-        <span><i class="dot ok"></i>計時中</span>
-        <span><i class="dot warn"></i>残り10分未満</span>
-        <span><i class="dot danger"></i>残り3分未満</span>
-      </div>
-      <div class="vipRow" id="vip"></div>
-    </section>
+  <main>
+    <!-- タイマー -->
+<section id="pageTimer" class="page">
+  <section class="floor" id="floor">
+    <div class="legend">
+      <span><i class="dot empty"></i>空席</span>
+      <span><i class="dot ok"></i>計時中</span>
+      <span><i class="dot warn"></i>残り10分未満</span>
+      <span><i class="dot danger"></i>残り3分未満</span>
+    </div>
+    <div class="vipRow" id="vip"></div>
+  </section>
 
     <section class="backstage">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <h2>控室（スプレッドシート連携）</h2>
-        <div style="display:flex;align-items:center;gap:12px">
-          <div class="legend-staff">
-            <span><i class="dotS on"></i> 出勤（空き）</span>
-            <span><i class="dotS busy"></i> 接客中</span>
-            <span><i class="dotS off"></i> 休み/退勤</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <h2>控室</h2>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="legend-staff">
+          <span><i class="dotS on"></i> 出勤（空き）</span>
+          <span><i class="dotS busy"></i> 接客中</span>
+          <span><i class="dotS off"></i> 休み/退勤</span>
+        </div>
+        
+        <button id="reloadStaff" class="secondary" type="button">更新</button>
+      </div>
+    </div>
+
+    <!-- ▼ここを新しい2カラムUIに -->
+<div class="rosterGrid">
+  <div class="rosterCol">
+    <div class="rosterHead">
+      <span>キャスト</span>
+      <div class="rosterCtrl">
+        <label class="mini"><input type="checkbox" id="editDutyCast"> 出勤を編集</label>
+        <input id="searchCast" class="rosterSearch" placeholder="検索">
+      </div>
+    </div>
+    <div id="rosterCast" class="roster"></div>
+  </div>
+
+  <div class="rosterCol">
+    <div class="rosterHead">
+      <span>ボーイ・スタッフ</span>
+      <div class="rosterCtrl">
+        <label class="mini"><input type="checkbox" id="editDutyBoy"> 出勤を編集</label>
+        <input id="searchBoy" class="rosterSearch" placeholder="検索">
+      </div>
+    </div>
+    <div id="rosterBoy" class="roster"></div>
+  </div>
+</div>
+  </section>
+</section>
+
+<!-- 幹部 -->
+<section id="pageAdmin" class="page">
+
+  <!-- ログインカード -->
+  <div class="sales-card" style="margin-top:12px">
+    <h2 style="margin:0 0 8px">ログイン</h2>
+    <div id="adminLocked">
+      <input id="adminCode" type="password" placeholder="幹部用パスコード" style="margin-right:6px">
+      <button id="adminEnter" class="sales-pill">入室</button>
+      <div style="font-size:12px;color:#64748b;margin-top:6px">* 店舗で共有する1つのパスコードだけで入室します</div>
+    </div>
+    <div id="adminUnlocked" style="display:none;align-items:center;gap:8px">
+      <span style="font-size:12px;color:#64748b">幹部モード</span>
+      <button id="adminLock" class="sales-pill">ロック</button>
+    </div>
+
+    <div id="adminWrong" style="display:none;color:#b91c1c;margin-top:6px">パスコードが違います</div>
+  </div>
+
+  <!-- ホーム（4ボタン） -->
+  <div id="adminHome" class="sales-card" style="display:none">
+    <h2 style="margin:0 0 8px">幹部メニュー</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <button type="button" class="sales-pill" onclick="location.hash='#admin-staff-list'">従業員管理（一覧）</button>
+      <button type="button" class="sales-pill" onclick="location.hash='#admin-staff-add'">従業員管理（追加）</button>
+      <button type="button" class="sales-pill" onclick="location.hash='#admin-prod-list'">商品管理（一覧）</button>
+      <button type="button" class="sales-pill" onclick="location.hash='#admin-prod-add'">商品管理（追加）</button>
+      <button type="button" class="sales-pill" onclick="location.hash='#admin-sales'">売上一覧</button>
+      <button type="button" class="sales-pill" onclick="location.hash='#admin-payroll'">給料支払い</button>
+      <button type="button" class="sales-pill" onclick="location.hash='#admin-payouts'">未払い者</button>
+      <button type="button" class="sales-pill" onclick="location.hash='#admin-analytics'">データ（集計）</button>
+
+    </div>
+  </div>
+
+  <!-- ===== 従業員：一覧 ===== -->
+  <div id="adminStaffList" class="sales-card" style="display:none">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <button type="button" class="sales-pill" onclick="location.hash='#admin'">← 戻る</button>
+      <h2 style="margin:0">従業員リスト</h2>
+      <button type="button" class="sales-pill" style="margin-left:auto" onclick="location.hash='#admin-staff-add'">＋ 追加ページへ</button>
+    </div>
+    <div id="stList" style="margin-top:8px"></div>
+  </div>
+
+  <!-- ===== 従業員：追加 ===== -->
+<!-- ===== 従業員：追加（複数行入力） ===== -->
+<div id="adminStaffAdd" class="sales-card" style="display:none">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <button type="button" class="sales-pill" onclick="location.hash='#admin-staff-list'">← 一覧へ</button>
+    <h2 style="margin:0">従業員の追加</h2>
+  </div>
+
+  <!-- ここに “従業員リスト風の行” を 5 行 初期表示 -->
+  <div id="stAddList" class="admin-st-list"></div>
+
+  <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+    
+    <button id="stAddClear" type="button" class="sales-pill secondary">行をクリア</button>
+    <div style="margin-left:auto;font-size:12px;color:#64748b">* 最大5行まで</div>
+    <button id="stAddBulk"  type="button" class="sales-pill">まとめて追加</button>
+  </div>
+
+  <div style="font-size:12px;color:#64748b;margin-top:6px">
+    * 名前を入力して役職を選び、「まとめて追加」を押します（空行は無視）<br>
+    * 追加時は「出勤:false / 有効:true」で登録（必要なら一覧で編集）
+  </div>
+</div>
+  </div>
+
+  <!-- ===== 商品：一覧 ===== -->
+<div id="adminProdList" class="sales-card" style="display:none">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <button type="button" class="sales-pill" onclick="location.hash='#admin'">← 戻る</button>
+    <h2 style="margin:0">商品リスト</h2>
+    <button type="button" class="sales-pill" style="margin-left:auto" onclick="location.hash='#admin-prod-add'">＋ 追加ページへ</button>
+  </div>
+  <div id="pdList" style="margin-top:8px"></div>
+</div>
+
+
+  <!-- ===== 商品：追加 ===== -->
+<div id="adminProdAdd" class="sales-card" style="display:none">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <button type="button" class="sales-pill" onclick="location.hash='#admin-prod-list'">← 一覧へ</button>
+    <h2 style="margin:0">商品の追加</h2>
+  </div>
+
+  <!-- 従業員追加と同じ “行ベース” UI（5行） -->
+  <div id="pdAddList" class="admin-st-list"></div>
+
+  <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+    <button id="pdAddClear" type="button" class="sales-pill secondary">行をクリア</button>
+    <div style="margin-left:auto;font-size:12px;color:#64748b">* 最大5行まで</div>
+    <button id="pdAddBulk"  type="button" class="sales-pill">まとめて追加</button>
+  </div>
+
+  <div style="font-size:12px;color:#64748b;margin-top:6px">
+    * 商品名と価格を入力し、「まとめて追加」を押します（空行は無視）<br>
+    * 追加時は「有効:true」で登録（必要なら一覧で編集）
+  </div>
+</div>
+
+  <div id="adminSales" class="sales-card" style="display:none">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <button type="button" class="sales-pill" onclick="location.hash='#admin'">← 戻る</button>
+    <h2 style="margin:0">売上一覧</h2>
+  </div>
+
+  <div id="salesListBox" style="font-size:14px"></div>
+</div>
+
+  <!-- ===== 給料：ページ ===== -->
+<div id="adminPayroll" class="sales-card" style="display:none">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <button type="button" class="sales-pill" onclick="location.hash='#admin'">← 戻る</button>
+    <h2 style="margin:0">給料支払い</h2>
+  </div>
+  <div id="payrollListBox" style="font-size:14px"></div>
+</div>
+
+  <!-- 支払者追加ピッカー -->
+<div class="pickerWrap" id="payrollAddWrap" aria-hidden="true" style="display:none">
+  <div class="pickerPanel" role="dialog" aria-modal="true" style="max-width:720px">
+    <div class="pickerHead">
+      <h3 style="margin:0;font-size:16px">支払者を追加</h3>
+      <div class="pickerBtns">
+        <button id="paClose"  class="secondary" type="button">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <input id="paSearch" class="prodSearch" placeholder="名前で検索（例: かな、にゃん）" style="flex:1">
+      <input id="paAmount" type="number" inputmode="numeric" min="0" step="1" placeholder="初期金額（円）"
+             style="width:160px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;text-align:right">
+      <button id="paAdd" type="button" class="sales-pill">追加</button>
+    </div>
+
+    <div id="paList" class="suggList" style="row-gap:8px"></div>
+    <div style="font-size:12px;color:#64748b;margin-top:6px">
+      * 一覧は現在の従業員マスターから「未追加の人」だけを表示します（役職は自動判定）
+    </div>
+  </div>
+
+    <!-- ===== 未払い者 ===== -->
+<div id="adminPayouts" class="sales-card" style="display:none">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <button type="button" class="sales-pill" onclick="location.hash='#admin'">← 戻る</button>
+    <h2 style="margin:0">未払い者</h2>
+  </div>
+
+  <!-- 上：未払いリスト（ここを縦いっぱい使ってスクロール） -->
+  <div id="payoutsListBox">
+    <div class="payoutsPanel">
+  <div class="payoutsHead">…</div>
+  <div id="payoutsListScroll" class="payoutsScroll admin-st-list">…未払い一覧…</div>
+</div>
+
+  </div>
+
+  <!-- 下：履歴（固定高さ・独立スクロール） -->
+  <div id="payoutsHistoryBox" style="margin-top:12px">
+    <div class="payoutsPanel">
+  <div class="payoutsHead">支払履歴</div>
+  <div id="payoutsHistScroll" class="payoutsScroll">…履歴…</div>
+</div>
+
+  </div>
+</div>
+
+  <!-- ===== データ（集計） ===== -->
+<div id="adminAnalytics" class="sales-card" style="display:none">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <button type="button" class="sales-pill" onclick="location.hash='#admin'">← 戻る</button>
+    <h2 style="margin:0">データ（集計）</h2>
+  </div>
+
+  <!-- 期間フィルタ -->
+  <div class="anaFilter">
+    <label>開始日 <input id="anaFrom" type="date"></label>
+    <label>終了日 <input id="anaTo" type="date"></label>
+    <button id="anaApply" type="button" class="sales-pill">適用</button>
+    <div class="anaQuick">
+      <button data-range="7"  type="button" class="sales-pill">直近7日</button>
+      <button data-range="30" type="button" class="sales-pill">直近30日</button>
+      <button data-range="90" type="button" class="sales-pill">直近90日</button>
+      <button data-range="0"  type="button" class="sales-pill">すべて</button>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div id="anaKpi" class="metricGrid"></div>
+
+    <!-- 日別キャスト売上ランキング（ここに描画） -->
+  <div id="anaDailyCast" class="anaBlock"></div>
+
+  <!-- 人気商品 -->
+  <div class="anaBlock">
+    <h3 class="anaH3">よく売れている商品（数量 / 売上）</h3>
+    <div id="anaProducts"></div>
+  </div>
+
+  <!-- 個人別（キャスト/ボーイ） -->
+  <div class="anaBlock">
+    <h3 class="anaH3">個人の売上・起用率</h3>
+    <div class="anaTwoCol">
+      <div>
+        <h4 class="anaH4">キャスト</h4>
+        <div id="anaCast"></div>
+      </div>
+      <div>
+        <h4 class="anaH4">ボーイ</h4>
+        <div id="anaBoy"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 席別 -->
+  <div class="anaBlock">
+    <h3 class="anaH3">席ごとの件数 / 売上</h3>
+    <div id="anaSeats"></div>
+  </div>
+
+  <!-- 日別（2:00〜翌2:00） -->
+  <div class="anaBlock">
+    <h3 class="anaH3">日別推移（2:00〜翌2:00を1日）</h3>
+    <div id="anaDaily"></div>
+  </div>
+</div>
+</section>
+
+<!-- 幹部ロジック（Firestore は既存のまま） -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+  import {
+   getFirestore, collection, doc, setDoc, serverTimestamp,
+   onSnapshot, deleteDoc, arrayUnion
+   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+  // ---- Firebase init（重複なし）----
+  const app = getApps().length ? getApps()[0] : initializeApp({
+    apiKey:"AIzaSyBru7m0EGNXBgRTzsmQMZknlAAirkTwwpw",
+    authDomain:"alexandria-8d142.firebaseapp.com",
+    projectId:"alexandria-8d142",
+    storageBucket:"alexandria-8d142.firebasestorage.app",
+    messagingSenderId:"78904719003",
+    appId:"1:78904719003:web:234e7d8b0703bad614f83e",
+    measurementId:"G-6TJNLEHJXQ"
+  });
+
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
+
+  // ---- 匿名サインイン：1回だけ ----
+  // window.__authReady を一度だけ作る
+  if (!window.__authReady) {
+    window.__authReady = new Promise((resolve, reject) => {
+      onAuthStateChanged(auth, (user) => { if (user) resolve(user); }, reject);
+    });
+    try {
+      await signInAnonymously(auth);
+      console.log('[auth] anonymous signed in');
+    } catch (e) {
+      console.error('[auth] signInAnonymously failed', e);
+    }
+  }
+
+  // ---- 共通定義（この module でも使うなら保持）----
+  const ROOM_ID = "default";
+  const seatsCol = collection(db, 'rooms', ROOM_ID, 'seats');
+  const dutyCol  = collection(db, 'rooms', ROOM_ID, 'duty');
+  const payrollCol = collection(db, 'rooms', ROOM_ID, 'payroll');
+  const payoutsCol = collection(db, 'rooms', ROOM_ID, 'payouts');
+
+  // 席書き込み（この module 内で使うなら残す／別moduleで使うなら window へ出す）
+  
+
+  // 他の module から必要なら公開しておく（任意）
+  window.firebaseApp = app;
+  window.db = db;
+  window.ROOM_ID = ROOM_ID;
+  window.pushSeatToFS = pushSeatToFS;
+
+  // ==== Firestore ====
+
+  // ↓↓↓ ここから先はあなたの既存コード（ROOM_ID/パスコード、applyState/showAdminSub、
+  //      staff/products の CRUD/onSnapshot、イベントハンドラなど）を
+  //      そのまま続けて置いてください。db は上で定義済みです。
+
+  const ADMIN_PASS_PLAIN = "test";
+  const LS_PREFIX = window.LS_PREFIX || "tt-dev-";
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+  async function sha256Hex(text){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');}
+
+  const KEY = LS_PREFIX + "admin.unlocked";
+
+  // ===== 未払いページ用：親(#pageAdmin)のスクロール制御（グローバル公開）=====
+function fitAdminPayouts(on){
+  const page = document.getElementById('pageAdmin');
+  const header = document.querySelector('header');
+  if(!page || !header) return;
+
+  if(on){
+    // ヘッダーの実測高をCSS変数へ
+    const h = Math.ceil(header.getBoundingClientRect().height);
+    document.documentElement.style.setProperty('--headerH', h + 'px');
+    // ページ全体スクロールを殺しつつ、子に高さを渡す
+    page.classList.add('payouts-fit');
+  }else{
+    page.classList.remove('payouts-fit');
+  }
+}
+// 非モジュールscript（最後のルーター）から呼べるよう window に公開
+window.fitAdminPayouts = fitAdminPayouts;
+
+// 画面サイズ変化時も反映（未払いページ表示中のみ）
+window.addEventListener('resize', ()=>{
+  if (location.hash.startsWith('#admin-payouts')) fitAdminPayouts(true);
+});
+
+// 初期ロード時にもヘッダー高をCSS変数へ反映
+document.addEventListener('DOMContentLoaded', () => {
+  const header = document.querySelector('header');
+  if (header) {
+    const h = Math.ceil(header.getBoundingClientRect().height);
+    document.documentElement.style.setProperty('--headerH', h + 'px');
+  }
+});
+  // ===== 幹部UI：ログイン/表示コントロール（唯一の定義） =====
+
+  function showAdminSub(hash) {
+  const h = hash || '#admin';
+
+  // いったん全部隠す
+  ['adminHome','adminStaffList','adminStaffAdd','adminProdList','adminProdAdd','adminSales','adminPayroll','adminPayouts','adminAnalytics'].forEach(id=>{
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  // どれを出すか
+  let target = 'adminHome';
+  if (h.startsWith('#admin-staff-list')) target = 'adminStaffList';
+  else if (h.startsWith('#admin-staff-add')) target = 'adminStaffAdd';
+  else if (h.startsWith('#admin-prod-list')) target = 'adminProdList';
+  else if (h.startsWith('#admin-prod-add')) target = 'adminProdAdd';
+  else if (h.startsWith('#admin-sales')) target = 'adminSales';
+  else if (h.startsWith('#admin-payroll')) target = 'adminPayroll';
+  else if (h.startsWith('#admin-payouts')) target = 'adminPayouts';
+  else if (h.startsWith('#admin-analytics')) target = 'adminAnalytics';
+
+  // ★ 未払い者ページだけは flex、それ以外は block
+  const el = document.getElementById(target);
+  if (el) el.style.display = (target === 'adminPayouts') ? 'flex' : 'block';
+    // ★ 追加：親ページのスクロールON/OFFを切り替え
+fitAdminPayouts(target === 'adminPayouts');
+}
+
+  function applyState(open){
+    const $locked   = document.getElementById('adminLocked');
+    const $unlocked = document.getElementById('adminUnlocked');
+    const $wrong    = document.getElementById('adminWrong');
+
+    if ($locked)   $locked.style.display   = open ? 'none'  : 'block';
+    if ($unlocked) $unlocked.style.display = open ? 'flex'  : 'none';
+    if ($wrong)    $wrong.style.display    = 'none';
+
+    if (open) {
+      showAdminSub(location.hash);
+    } else {
+      ['adminHome','adminStaffList','adminStaffAdd','adminProdList','adminProdAdd','adminSales'].forEach(id=>{
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+    }
+  }
+
+// Firestoreへ席状態を書き込む（1卓分）
+async function pushSeatToFS(s){
+  try{
+    await setDoc(
+      doc(seatsCol, s.id),
+      {
+        id: s.id,
+        group: s.group,
+        label: s.label || '',
+        cast: s.cast || '',
+        boy:  s.boy  || '',
+        end:  s.end ?? null,
+        finished: !!s.finished,
+        extendCount: Number(s.extendCount||0),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  }catch(e){
+    console.error('[seats] write failed', e);
+  }
+}
+
+  // 初期反映（セッションの継続対応）
+  applyState(sessionStorage.getItem(KEY) === '1');
+
+  // 入室
+  document.getElementById('adminEnter')?.addEventListener('click', async ()=>{
+    const inputEl = document.getElementById('adminCode');
+    const input   = (inputEl?.value || '').trim();
+    if (!input) return;
+
+    const ok = (await sha256Hex(input)) === (await sha256Hex(ADMIN_PASS_PLAIN));
+    if (ok) {
+      sessionStorage.setItem(KEY, '1');
+      if (!location.hash.startsWith('#admin')) location.hash = '#admin';
+      applyState(true);
+      if (inputEl) inputEl.value = '';
+    } else {
+      const $wrong = document.getElementById('adminWrong');
+      if ($wrong) $wrong.style.display = 'block';
+    }
+  });
+
+  // ロック（ログアウト）
+  document.getElementById('adminLock')?.addEventListener('click', ()=>{
+    sessionStorage.removeItem(KEY);
+    applyState(false);
+  });
+
+  // ハッシュ変化でサブページ切替（ログイン時のみ）
+  window.addEventListener('hashchange', ()=>{
+    if (sessionStorage.getItem(KEY) === '1' && location.hash.startsWith('#admin')) {
+      showAdminSub(location.hash);
+    }
+    // 追加：データ（集計）ページ
+if (location.hash.startsWith('#admin-analytics')) {
+  window.renderAnalytics && renderAnalytics();
+}
+
+  });
+
+  // URL直打ちで #admin-* のとき
+  if (sessionStorage.getItem(KEY) === '1' && location.hash.startsWith('#admin')) {
+    showAdminSub(location.hash);
+  }
+
+  /* ====== staff CRUD（一覧に描画） ====== */
+  const stCol = collection(db,'rooms',ROOM_ID,'staff');
+
+  const renderStaffRows = (rows)=>{
+    const root = document.getElementById('stList');
+    if(!root) return;
+
+    root.classList.add('admin-st-list'); // スタイル適用
+    root.innerHTML = rows.map(s=>`
+      <div class="stRow" data-id="${esc(s.id)}">
+        <input class="nm" value="${esc(s.name||'')}" placeholder="名前　例: あやか" disabled>
+        <select class="rl" disabled>
+          <option value="cast"  ${s.role==='cast' ?'selected':''}>キャスト</option>
+            <option value="boy"   ${s.role==='boy'  ?'selected':''}>ボーイ</option>
+            <option value="staff" ${s.role==='staff'?'selected':''}>スタッフ</option>
+            <option value="fired" ${s.role==='fired'?'selected':''}>解雇</option>
+          </select>
+        <button class="edit stBtn sales-pill" type="button">編集</button>
+        <button class="dl   stBtn sales-pill" type="button">削除</button>
+      </div>
+    `).join('');
+
+    // 行ごとのイベント
+    [...root.querySelectorAll('.stRow')].forEach((row,i)=>{
+      const rec = rows[i];
+      const $nm = row.querySelector('.nm');
+      const $rl = row.querySelector('.rl');
+      const $edit = row.querySelector('.edit');
+      const $del  = row.querySelector('.dl');
+
+      // 編集トグル：閲覧→編集→保存
+      $edit.addEventListener('click', async ()=>{
+        const isView = $nm.disabled;
+        if (isView){
+          // 編集モードへ
+          $nm.disabled = false;
+          $rl.disabled = false;
+          $nm.focus();
+          $edit.textContent = '保存';
+          row.dataset.editing = '1';
+        }else{
+          // 保存して閲覧モードへ
+          const name  = ($nm.value||'').trim();
+          const role  = $rl.value || 'cast';
+          // 役職が解雇なら duty は落とす
+          const duty  = (role==='fired') ? false : !!rec.duty;
+          const active= rec.active!==false;   // 既存値を温存
+
+          if(!name){ alert('名前は必須です'); $nm.focus(); return; }
+
+          const newId = name.replace(/\//g,'／');
+
+          try{
+            if(newId !== rec.id){
+              // ドキュメント名変更（コピー→元削除）
+              await setDoc(doc(stCol,newId), {name,role,duty,active,updatedAt:serverTimestamp()},{merge:true});
+              await deleteDoc(doc(stCol,rec.id));
+            }else{
+              await setDoc(doc(stCol,rec.id), {name,role,updatedAt:serverTimestamp()},{merge:true});
+            }
+            // ローカルUIを閲覧状態に戻す
+            $nm.disabled = true;
+            $rl.disabled = true;
+            $edit.textContent = '編集';
+            row.dataset.editing = '';
+          }catch(e){
+            console.error(e);
+            alert('保存に失敗しました: ' + (e?.message || e));
+          }
+       
+
+        }
+      });
+
+      // 削除
+      $del.addEventListener('click', async ()=>{
+        if(confirm('削除しますか？')) await deleteDoc(doc(stCol, rec.id));
+      });
+    });
+  };
+
+  // ===== staff: 追加（従業員追加ページの［追加］ボタン）===== ＊外に1回だけ定義
+  // ===== 追加ページ（複数行）UI =====
+const stAddList   = document.getElementById('stAddList');
+const btnAddRow   = document.getElementById('stAddRow');
+const btnAddClear = document.getElementById('stAddClear');
+const btnAddBulk  = document.getElementById('stAddBulk');
+
+const MAX_ADD_ROWS = 5;
+
+function makeAddRow(init){
+  const row = document.createElement('div');
+  row.className = 'stRow';
+  row.innerHTML = `
+    <input class="nm" placeholder="名前　例: あやか">
+    <select class="rl">
+      <option value="cast"  ${init?.role==='cast' ?'selected':''}>キャスト</option>
+      <option value="boy"   ${init?.role==='boy'  ?'selected':''}>ボーイ</option>
+      <option value="staff" ${init?.role==='staff'?'selected':''}>スタッフ</option>
+      <option value="fired" ${init?.role==='fired'?'selected':''}>解雇</option>
+    </select>
+    <div></div>
+    <div></div>
+  `;
+  if (init?.name) row.querySelector('.nm').value = init.name;
+  return row;
+}
+
+
+function ensureRows(){
+  const cur = stAddList.querySelectorAll('.stRow').length;
+  if (cur === 0) stAddList.appendChild(makeAddRow());
+  if (btnAddRow) {
+     btnAddRow.disabled = stAddList.querySelectorAll('.stRow').length >= MAX_ADD_ROWS;
+   }
+}
+
+function seedAddRows(){
+  stAddList.innerHTML = '';
+  for(let i=0;i<MAX_ADD_ROWS;i++){
+    stAddList.appendChild(makeAddRow());
+  }
+  ensureRows();
+}
+
+btnAddRow?.addEventListener('click', ()=>{
+  if (stAddList.querySelectorAll('.stRow').length >= MAX_ADD_ROWS) return;
+  stAddList.appendChild(makeAddRow());
+  ensureRows();
+});
+
+btnAddClear?.addEventListener('click', seedAddRows);
+
+btnAddBulk?.addEventListener('click', async ()=>{
+  const rows = [...stAddList.querySelectorAll('.stRow')].map(r=>{
+    const name = (r.querySelector('.nm').value||'').trim();
+    const role = (r.querySelector('.rl').value)||'cast';
+    return { name, role };
+  }).filter(r=>r.name);
+
+  if (!rows.length){
+    alert('入力が空です');
+    stAddList.querySelector('.nm')?.focus();
+    return;
+  }
+
+  const seen = new Set();
+  const uniqueRows = rows.filter(r=>{
+    if (seen.has(r.name)) return false;
+    seen.add(r.name);
+    return true;
+  });
+
+  btnAddBulk.disabled = true;
+  btnAddBulk.textContent = '追加中…';
+
+  try{
+    await Promise.all(uniqueRows.map(async ({name, role})=>{
+      const id = name.replace(/\//g, '／');
+      await setDoc(doc(stCol, id), {
+        name, role, duty: false, active: true, updatedAt: serverTimestamp()
+      }, { merge: true });
+    }));
+
+    alert(`${uniqueRows.length}名を追加しました`);
+    seedAddRows();
+    location.hash = '#admin-staff-list';
+  }catch(e){
+    console.error('bulk add failed:', e);
+    alert('追加に失敗しました: ' + (e?.message || e));
+  }finally{
+    btnAddBulk.disabled = false;
+    btnAddBulk.textContent = 'まとめて追加';
+  }
+});
+
+// 初期5行を用意（ページ読み込み時に1回でOK）
+seedAddRows();
+
+  // staff リアルタイム購読（1つだけ）
+onSnapshot(stCol, (qs)=>{
+  const rows = [];
+  qs.forEach(docSnap=>{
+    rows.push({ id: docSnap.id, ...(docSnap.data() || {}) });
+  });
+  // 役職順: cast/boy/staff(=0) → fired(=1) の優先度で、同順位は名前昇順
+  const prio = (r)=> r.role==='fired' ? 1 : 0;
+  rows.sort((a,b)=>{
+    const pa = prio(a), pb = prio(b);
+    if (pa!==pb) return pa-pb;
+    return String(a.name||'').localeCompare(String(b.name||''), 'ja');
+  });
+  renderStaffRows(rows);   // ← これで一覧に描画される
+  // 給料ページ用に全従業員の簡易マスターを保持
+  window.STAFF_MASTER = rows
+    .filter(r => r.role !== 'fired' && r.active !== false)
+    .map(r => ({ name: r.name, role: (r.role === 'boy' ? 'boy' : 'cast') }));
+});
+
+  /* ====== products CRUD（一覧に描画） ====== */
+/* ===== products CRUD（従業員と同じUI） ===== */
+const pdCol = collection(db,'rooms',ROOM_ID,'products');
+
+/** 一覧レンダリング（“有効”を廃止して名前・価格のみ） */
+const renderProdRows = (rows)=>{
+  const root = document.getElementById('pdList');
+  if(!root) return;
+
+  root.innerHTML = rows.map(p=>`
+    <div class="pdRowList" data-id="${esc(p.id)}">
+      <input class="nm" value="${esc(p.name||'')}" placeholder="商品名" disabled>
+      <input class="pr" type="number" min="0" step="1" value="${Number(p.price||0)}" disabled>
+      <div style="text-align:right">
+        <button class="edit stBtn sales-pill" type="button">編集</button>
+        <button class="dl   stBtn sales-pill" type="button">削除</button>
+      </div>
+    </div>
+  `).join('');
+
+  [...root.querySelectorAll('.pdRowList')].forEach((row,i)=>{
+    const rec = rows[i];
+    const $nm = row.querySelector('.nm');
+    const $pr = row.querySelector('.pr');
+    const $edit = row.querySelector('.edit');
+    const $del  = row.querySelector('.dl');
+
+    // 編集→保存トグル
+    $edit.addEventListener('click', async ()=>{
+      const isView = $nm.disabled;
+      if (isView){
+        $nm.disabled=false; $pr.disabled=false;
+        $nm.focus(); $edit.textContent='保存'; row.dataset.editing='1';
+      }else{
+        const name = ($nm.value||'').trim();
+        const price= Number($pr.value||0);
+        if(!name){ alert('商品名は必須です'); $nm.focus(); return; }
+
+        // “active”は表示しないので既存値を温存
+        const active = rec.active !== false;
+
+        const newId = name.replace(/\//g,'／');
+        try{
+          if(newId !== rec.id){
+            await setDoc(doc(pdCol,newId), {name,price,active,updatedAt:serverTimestamp()},{merge:true});
+            await deleteDoc(doc(pdCol,rec.id));
+          }else{
+            await setDoc(doc(pdCol,rec.id), {name,price,updatedAt:serverTimestamp()},{merge:true});
+          }
+          $nm.disabled=true; $pr.disabled=true;
+          $edit.textContent='編集'; row.dataset.editing='';
+        }catch(e){
+          console.error(e); alert('保存に失敗しました: ' + (e?.message || e));
+        }
+      }
+    });
+
+    // 削除
+    $del.addEventListener('click', async ()=>{
+      if(confirm('削除しますか？')) await deleteDoc(doc(pdCol, rec.id));
+    });
+  });
+};
+
+// リアルタイム購読
+onSnapshot(pdCol,(qs)=>{
+  const rows=[]; qs.forEach(d=>rows.push({id:d.id,...(d.data()||{})}));
+  rows.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ja'));
+  renderProdRows(rows);
+});
+
+/** ===== 追加ページ（複数行） ===== */
+const pdAddList   = document.getElementById('pdAddList');
+const btnPdAddClear = document.getElementById('pdAddClear');
+const btnPdAddBulk  = document.getElementById('pdAddBulk');
+
+const MAX_PD_ADD_ROWS = 5;
+
+function makePdAddRow(init){
+  const row = document.createElement('div');
+  row.className = 'pdRowAdd';
+  row.innerHTML = `
+    <input class="nm" placeholder="商品名">
+    <input class="pr" type="number" min="0" step="1" placeholder="価格（円）">
+    <div></div>
+  `;
+  if (init?.name)  row.querySelector('.nm').value = init.name;
+  if (init?.price) row.querySelector('.pr').value = Number(init.price||0);
+  return row;
+}
+
+function seedPdAddRows(){
+  pdAddList.innerHTML = '';
+  for(let i=0;i<MAX_PD_ADD_ROWS;i++) pdAddList.appendChild(makePdAddRow());
+}
+
+btnPdAddClear?.addEventListener('click', seedPdAddRows);
+seedPdAddRows();
+
+btnPdAddBulk?.addEventListener('click', async ()=>{
+  const rows = [...pdAddList.querySelectorAll('.pdRowAdd')].map(r=>{
+    const name  = (r.querySelector('.nm').value||'').trim();
+    const price = Number(r.querySelector('.pr').value||0);
+    return { name, price };
+  }).filter(r=>r.name);
+
+  if (!rows.length){
+    alert('入力が空です'); pdAddList.querySelector('.nm')?.focus(); return;
+  }
+
+  const seen = new Set();
+  const uniqueRows = rows.filter(r=>{ if(seen.has(r.name)) return false; seen.add(r.name); return true; });
+
+  btnPdAddBulk.disabled = true; btnPdAddBulk.textContent = '追加中…';
+  try{
+    await Promise.all(uniqueRows.map(async ({name, price})=>{
+      const id = name.replace(/\//g, '／');
+      await setDoc(doc(pdCol, id), {
+        name, price, active: true, updatedAt: serverTimestamp()
+      }, { merge: true });
+    }));
+    alert(`${uniqueRows.length}件を追加しました`);
+    seedPdAddRows();
+    location.hash = '#admin-prod-list';
+  }catch(e){
+    console.error('product bulk add failed:', e);
+    alert('追加に失敗しました: ' + (e?.message || e));
+  }finally{
+    btnPdAddBulk.disabled = false; btnPdAddBulk.textContent = 'まとめて追加';
+  }
+});
+
+  // ===== 売上一覧（幹部） =====
+const salesCol = collection(db,'rooms',ROOM_ID,'sales');
+
+  // --- 幹部側でも商品リストを使えるように購読 ---
+const pdColAdmin = collection(db,'rooms',ROOM_ID,'products');
+const yen = n => new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY'}).format(Number(n||0));
+let PRODUCTS_MASTER = [];
+onSnapshot(pdColAdmin,(qs)=>{
+  const rows=[]; qs.forEach(d=>rows.push({id:d.id,...(d.data()||{})}));
+  PRODUCTS_MASTER = rows
+    .filter(p=>p.active!==false)
+    .map(p=>({name:p.name, price:Number(p.price||0)}))
+    .sort((a,b)=> String(a.name).localeCompare(String(b.name),'ja'));
+});
+
+// ===== 「2:00〜翌2:00」を1日として日別セクションにまとめて表示 =====
+
+  // --- 追加：ハッシュから日付キーを取得（#admin-sales/2025-10-30 など） ---
+function getSalesDayFromHash(){
+  const m = location.hash.match(/^#admin-sales\/(\d{4}-\d{2}-\d{2})$/);
+  return m ? m[1] : null;
+}
+// 最新の売上スナップショットを保持
+let SALES_ROWS_CACHE = [];
+
+  window.SALES_ROWS_CACHE = window.SALES_ROWS_CACHE || [];
+
+
+// Firestore Timestamp -> JS Date 変換の安全関数
+function tsToDate(ts){
+  if (!ts) return null;
+  if (typeof ts.toDate === 'function') return ts.toDate();
+  if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000);
+  if (ts instanceof Date) return ts;
+  return null;
+}
+
+// 2:00を境に営業日キー（YYYY-MM-DD）を返す
+function bizDayKeyFromDate(d){
+  const x = new Date(d.getTime());
+  if (x.getHours() < 2) {
+    // 2時前は前日の営業日扱い
+    x.setDate(x.getDate() - 1);
+  }
+  const y = x.getFullYear();
+  const m = String(x.getMonth()+1).padStart(2,'0');
+  const day = String(x.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+// 見出し用のラベル（YYYY/MM/DD + 範囲注記）
+function bizDayLabel(key){
+  if (key === 'unknown') return '未分類（日時なし）';
+  const [y,m,d] = key.split('-');
+  return `${y}/${m}/${d}（2:00〜翌2:00）`;
+}
+
+// 個別行のHTML
+function salesRowHTML(r){
+  const when = r.createdAt
+      ? (r.createdAt.toDate?.() || new Date(r.createdAt.seconds*1000))
+          .toLocaleString('ja-JP',{hour12:false})
+      : '';
+  const lines = (r.rows||[])
+    .map(it => `${esc(it.product)} × ${Number(it.qty||0)} （${Number(it.unitPrice||0).toLocaleString()}円）`)
+    .join('、 ');
+  return `
+    <div class="salesRow" data-id="${esc(r.id)}"
+         style="padding:8px 0; border-top:1px dashed #e5e7eb; display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:start;">
+      <div style="padding-top:3px"><input type="checkbox" class="sel"></div>
+      <div>
+        <div><b>${esc(r.seatLabel||r.seatId||'')}</b>｜合計 <b>¥${Number(r.total||0).toLocaleString()}</b>｜${when}</div>
+        <div style="color:#475569">キャスト：${esc((r.cast||[]).join(', ')||'なし')}　/　ボーイ：${esc(r.boy||'')}</div>
+        <div style="color:#475569">${lines}</div>
+      </div>
+      <div style="display:flex; gap:8px">
+        <button type="button" class="sales-pill edit">編集</button>
+        <button type="button" class="sales-pill danger dl">削除</button>
+      </div>
+    </div>
+  `;
+}
+
+  // 2:00境界の営業日キー → 行配列のマップ化
+function groupSalesByBizDay(rows){
+  const groups = {};
+  for(const r of rows){
+    const d = tsToDate(r.createdAt);
+    const key = d ? bizDayKeyFromDate(d) : 'unknown';
+    (groups[key] ||= []).push(r);
+  }
+  return groups;
+}
+
+// 「日一覧」ページ（#admin-sales）
+function renderSalesIndex(rows){
+  const root = document.getElementById('salesListBox');
+  if(!root) return;
+
+  const groups = groupSalesByBizDay(rows);
+  let keys = Object.keys(groups).sort().reverse(); // 新しい日が上
+
+  if(!keys.length){
+    root.innerHTML = '<div style="color:#64748b">（データがありません）</div>';
+    return;
+  }
+
+  // 1カード＝1営業日
+  const cards = keys.map(key=>{
+    const list = groups[key];
+    const total = list.reduce((a,b)=> a + Number(b.total||0), 0);
+    const cnt   = list.length;
+    const href  = `#admin-sales/${key}`;
+    return `
+      <a href="${href}" style="
+        display:block; padding:12px; margin:8px 0; border:1px solid #e5e7eb;
+        border-radius:12px; background:#fff; text-decoration:none; color:inherit;">
+        <div style="display:flex; align-items:center; gap:8px; justify-content:space-between;">
+          <div>
+            <div style="font-weight:700">${bizDayLabel(key)}</div>
+            <div style="font-size:12px; color:#64748b">${cnt} 件</div>
           </div>
-          <label style="font-size:12px"><input type="checkbox" id="editDuty" /> 出勤を編集</label>
-          <button id="reloadStaff" class="secondary" type="button">更新</button>
+          <div style="font-weight:800">合計：¥${Number(total).toLocaleString()}</div>
+        </div>
+      </a>
+    `;
+  }).join('');
+
+  // ヘッダ（戻るボタンは上位メニューで代替）
+  root.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <h2 style="margin:0">売上一覧（日別）</h2>
+    </div>
+    ${cards}
+  `;
+}
+
+// 日別にまとめて描画
+function renderSalesGroupedByBizDay(rows, filterDay /* 'YYYY-MM-DD' or null */){
+  const root = document.getElementById('salesListBox');
+  if(!root) return;
+
+  // グルーピング
+  const groups = {};
+  for (const r of rows){
+    const d = tsToDate(r.createdAt);
+    const key = d ? bizDayKeyFromDate(d) : 'unknown';
+    (groups[key] ||= []).push(r);
+  }
+
+  // 表示するキー（filterDayがあればその日のみ）
+  let keys = Object.keys(groups).sort().reverse();
+  if (filterDay) keys = keys.filter(k => k === filterDay);
+
+  // 0件なら空表示
+  if(!keys.length){
+    root.innerHTML = '<div style="color:#64748b">（データがありません）</div>';
+    return;
+  }
+
+  // 見出しリンク：日別ページへ遷移できるように
+  const daySectionHTML = (key) => {
+    const listHTML = groups[key].map(salesRowHTML).join('');
+    const dayHref = `#admin-sales/${key}`; // ← 日別ページ
+    return `
+      <section class="salesDay" data-day="${key}"
+        style="margin:10px 0 16px; padding:10px; border:1px solid #e5e7eb; border-radius:12px; background:#fff;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px">
+          <h3 style="margin:0; font-size:14px">
+            <a href="${dayHref}" style="text-decoration:none; color:inherit">${bizDayLabel(key)}</a>
+          </h3>
+          ${
+            filterDay
+              ? `<span style="font-size:12px; color:#64748b; margin-left:6px">（この日のページ）</span>`
+              : ''
+          }
+        </div>
+
+        <!-- この日の一括削除バー：文言を「選択を削除」に -->
+        <div class="salesBulkDay" style="display:flex; gap:8px; align-items:center; margin:4px 0 8px;">
+          <button class="sales-pill danger dayBulkDelete" type="button" disabled>選択を削除</button>
+          <span class="dayBulkCount" style="font-size:12px; color:#64748b">0件選択中</span>
+          ${
+            filterDay
+              ? `<button class="sales-pill" type="button" onclick="location.hash='#admin-sales'">← 日一覧へ</button>`
+              : ''
+          }
+        </div>
+
+        <div class="dayList">
+          ${listHTML}
+        </div>
+      </section>
+    `;
+  };
+
+  root.innerHTML = keys.map(daySectionHTML).join('');
+
+  // 行動作（各セクションごと）
+  const salesCol = collection(db,'rooms',ROOM_ID,'sales');
+  root.querySelectorAll('.salesDay').forEach(section=>{
+    const bulkBtn   = section.querySelector('.dayBulkDelete');
+    const bulkCount = section.querySelector('.dayBulkCount');
+
+    // 選択数更新
+    const updateBulk = ()=>{
+      const n = section.querySelectorAll('.sel:checked').length;
+      bulkBtn.disabled = n===0;
+      bulkCount.textContent = `${n}件選択中`;
+    };
+    section.querySelectorAll('.sel').forEach(chk => chk.addEventListener('change', updateBulk));
+    updateBulk();
+
+    // 単体削除
+    section.querySelectorAll('.dl').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const row = btn.closest('.salesRow');
+        const id  = row?.dataset.id;
+        if(!id) return;
+        if(!confirm('この売上を削除しますか？')) return;
+        try{ await deleteDoc(doc(salesCol, id)); }catch(e){ alert('削除に失敗しました: ' + (e?.message||e)); }
+      });
+    });
+
+    // ★ 編集（モーダルを開く）
+    section.querySelectorAll('.edit').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const row = btn.closest('.salesRow');
+        const id  = row?.dataset.id;
+        if(!id) return;
+        const rec = (window.SALES_ROWS_CACHE || []).find(r => r.id === id);
+        if (rec) openSalesEditModal(rec);   // 既に定義済みの編集モーダル関数を呼ぶ
+      });
+    });
+
+    // この日の“選択分だけ”一括削除
+    bulkBtn?.addEventListener('click', async ()=>{
+      const ids = [...section.querySelectorAll('.sel:checked')]
+        .map(chk => chk.closest('.salesRow')?.dataset.id)
+        .filter(Boolean);
+      if(!ids.length) return;
+      if(!confirm(`${ids.length}件を削除します。よろしいですか？`)) return;
+
+      bulkBtn.disabled = true;
+      const oldTxt = bulkBtn.textContent;
+      bulkBtn.textContent = '削除中…';
+      try{ await Promise.all(ids.map(id => deleteDoc(doc(salesCol, id)))); }
+      catch(e){ alert('一括削除に失敗しました: ' + (e?.message||e)); }
+      finally{ bulkBtn.textContent = oldTxt; }
+    });
+  });
+}
+  
+  // --- 給料ページ：追加入力＆追加支払者をローカルに保持 ---
+const LS_PAYROLL = (window.LS_PREFIX || 'tt-dev-') + 'payroll.extra.';
+// 形式: { manualAdds: { [name]: number }, extra: [{name, role, amount}] }
+function loadPayrollExtras(day){
+  try{ return JSON.parse(localStorage.getItem(LS_PAYROLL+day) || '{}'); }
+  catch(_){ return {}; }
+}
+function savePayrollExtras(day, data){
+  localStorage.setItem(LS_PAYROLL+day, JSON.stringify(data || {}));
+}
+function getExtrasSafe(day){
+  const x = loadPayrollExtras(day);
+  return {
+    manualAdds: (x.manualAdds && typeof x.manualAdds === 'object') ? x.manualAdds : {},
+    extra: Array.isArray(x.extra) ? x.extra : []
+  };
+}
+
+  /* ========= 給料支払い ========= */
+
+// 既存の営業日関数を流用（getSalesDayFromHash, bizDayLabel, groupSalesByBizDay, SALES_ROWS_CACHE は上で定義済み）
+
+// 給料確定ドキュメントのキャッシュ（{ [dayKey]: {exists:true, doc:{…}} }）
+let PAYROLL_INDEX = {};
+onSnapshot(payrollCol, (qs)=>{
+  const next = {};
+  qs.forEach(d => next[d.id] = { exists:true, doc:{ id:d.id, ...(d.data()||{}) }});
+  PAYROLL_INDEX = next;
+  // 表示中が給料ページなら再描画
+  if (location.hash.startsWith('#admin-payroll')) {
+    const day = getPayrollDayFromHash();
+    if (day) renderPayrollDay(day);
+    else     renderPayrollIndex();
+  }
+});
+
+// #admin-payroll/2025-11-02 のような詳細ページ判定
+function getPayrollDayFromHash(){
+  const m = location.hash.match(/^#admin-payroll\/(\d{4}-\d{2}-\d{2})$/);
+  return m ? m[1] : null;
+}
+window.getPayrollDayFromHash = getPayrollDayFromHash;
+
+// 1日の売上配列 → { entries:[{name,role,amount}], totals:{sales,cast,boy,shop}, byName:{name:{role,amount}} }
+function computePayrollForDay(dayKey, rows){
+  const byName = {}; // name -> { role:'cast'|'boy', amount:number }
+  let salesTotal = 0, castTotal = 0, boyTotal = 0;
+
+  for (const r of rows){
+    const total = Number(r.total||0);
+    if (!total) continue;
+    salesTotal += total;
+
+    // キャスト配分
+    const casts = Array.isArray(r.cast) ? r.cast.filter(Boolean) : [];
+    const castShare = total * 0.7;
+    if (casts.length){
+      const per = castShare / casts.length;
+      casts.forEach(n=>{
+        const key = n.trim(); if(!key) return;
+        byName[key] ||= { role:'cast', amount:0 };
+        byName[key].role = 'cast';
+        byName[key].amount += per;
+      });
+      castTotal += castShare;
+    }
+
+    // ボーイ配分（1名）
+    const boy = (r.boy||'').trim();
+    if (boy){
+      const boyShare = total * 0.2;
+      byName[boy] ||= { role:'boy', amount:0 };
+      byName[boy].role = 'boy';
+      byName[boy].amount += boyShare;
+      boyTotal += boyShare;
+    }
+  }
+
+  const entries = Object.entries(byName)
+    .map(([name,v]) => ({ name, role:v.role, amount: Math.round(v.amount) })) // 円未満は四捨五入
+    .sort((a,b)=> a.role===b.role
+      ? String(a.name).localeCompare(b.name,'ja')
+      : (a.role==='cast'? -1 : 1)); // cast→boy の順
+
+  const shop = Math.round(salesTotal - castTotal - boyTotal); // 参考：店取り
+  return {
+    day: dayKey,
+    entries,
+    totals: {
+      sales: Math.round(salesTotal),
+      cast:  Math.round(castTotal),
+      boy:   Math.round(boyTotal),
+      shop
+    }
+  };
+}
+
+  // 日付ラベル再利用: bizDayLabel(dayKey) は既存
+
+// 1件を支払済にする
+async function markPayoutPaid({day, name, amount, note}){
+  const id = `${day}__${name}`.replace(/\//g,'／');
+  try{
+    await setDoc(
+      doc(payoutsCol, id),
+      {
+        id, day, name,
+        amount: Math.round(Number(amount||0)),
+        paid: true,
+        note: (note||''),
+        paidAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        history: arrayUnion(
+          `[${new Date().toLocaleString('ja-JP',{hour12:false})}] 支払済 ¥${Math.round(Number(amount||0)).toLocaleString()}${note?`（${note}）`:''}`
+        )
+      },
+      { merge: true }
+    );
+    return true;          // ★ 成功
+  }catch(e){
+    alert('更新に失敗しました: ' + (e?.message || e));
+    return false;         // ★ 失敗
+  }
+}
+
+// 未払い者ページを描画
+function renderPayoutsPage(){
+  const box = document.getElementById('payoutsListBox');
+  const histBox = document.getElementById('payoutsHistoryBox');
+  if (!box || !histBox) return;
+
+  // 1) PAYROLL_INDEX から「未払い候補」を作り、PAYOUTS_INDEX で paid 状況を参照
+  const raw = []; // {key, day, name, amount}
+  Object.values(PAYROLL_INDEX||{}).forEach(({doc})=>{
+    if (!doc?.entries || !Array.isArray(doc.entries)) return;
+    const day = doc.day || '';
+    doc.entries.forEach(e=>{
+      const name = e.name || '';
+      const amount = Number(e.amount||0);
+      const key = `${day}__${name}`.replace(/\//g,'／');
+      const paidRec = PAYOUTS_INDEX[key];
+      if (!paidRec || paidRec.paid !== true){
+        raw.push({ key, day, name, amount });
+      }
+    });
+  });
+
+  // 2) 同名を集約（複数日の未払いをまとめる）
+  //    map[name] = { name, total, keys:[{day, amount, key}, ...] }
+  const grouped = {};
+  for (const r of raw){
+    const g = (grouped[r.name] ||= { name:r.name, total:0, keys:[] });
+    g.total += Number(r.amount||0);
+    g.keys.push({ day:r.day, amount:Number(r.amount||0), key:r.key });
+  }
+
+  // 表示用配列（名前昇順）
+  const items = Object.values(grouped)
+    .sort((a,b)=> a.name.localeCompare(b.name,'ja'));
+
+  // 3) 上段：未払い（集約版）パネル
+  if (!items.length){
+    box.innerHTML = `
+      <div class="payoutsPanel">
+        <div class="payoutsHead">
+          <span class="pill">確定済みから自動集計</span>
+        </div>
+        <div style="color:#64748b">（未払いはありません）</div>
+      </div>`;
+  }else{
+    const rowsHTML = items.map(it=>`
+      <div class="stRow payoutRow" data-name="${esc(it.name)}" style="grid-template-columns: 2fr 1fr auto auto; gap:12px;">
+        <div>
+          <div style="font-weight:700">${esc(it.name)}</div>
+          <div style="font-size:12px;color:#64748b">未払い日数：${it.keys.length} 日</div>
+        </div>
+        <div style="text-align:right;font-weight:800">¥${it.total.toLocaleString()}</div>
+        <input class="memo" placeholder="メモ（任意）">
+        <button class="pay stBtn sales-pill" type="button">支払済にする</button>
+      </div>
+    `).join('');
+
+    box.innerHTML = `
+      <div class="payoutsPanel">
+        <div class="payoutsHead">
+          <span class="pill">確定済みから自動集計</span>
+          <button id="payoutsPayAll" class="sales-pill" type="button">表示中を全て支払済に</button>
+        </div>
+        <div id="payoutsListScroll" class="payoutsScroll admin-st-list">${rowsHTML}</div>
+      </div>
+    `;
+
+    // 行高を計測して6行ぶんの高さを安定化
+    const first = box.querySelector('.payoutRow');
+    if (first){
+      const h = Math.ceil(first.getBoundingClientRect().height);
+      box.style.setProperty('--payoutRowH', h + 'px');
+    }
+
+    // 個別ボタン：同名の全キーに対して paid=true
+    box.querySelectorAll('.stRow .pay').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const row  = btn.closest('.stRow');
+        const name = row?.dataset.name || '';
+        const memo = (row.querySelector('.memo')?.value || '').trim();
+        if (!name) return;
+
+        const pack = items.find(x=>x.name===name);
+        if (!pack || !pack.keys?.length) return;
+
+        btn.disabled = true;
+        const old = btn.textContent;
+        btn.textContent = '更新中…';
+
+        let okAll = true;
+        for (const k of pack.keys){
+          const ok = await markPayoutPaid({ day:k.day, name, amount:k.amount, note:memo });
+          if (!ok) okAll = false;
+        }
+        if (okAll) row.remove();
+
+        btn.disabled = false;
+        btn.textContent = old;
+      });
+    });
+
+    // 一括：表示中の全“名前”に対して、それぞれの全キーを paid=true
+    box.querySelector('#payoutsPayAll')?.addEventListener('click', async ()=>{
+      if (!confirm(`表示中の ${items.length} 名ぶんを支払済にします。よろしいですか？`)) return;
+
+      const rows = [...box.querySelectorAll('.stRow')];
+      let okCount = 0;
+
+      for (const row of rows){
+        const name = row.dataset.name || '';
+        const memo = (row.querySelector('.memo')?.value || '').trim();
+        const pack = items.find(x=>x.name===name);
+        if (!pack || !pack.keys?.length) continue;
+
+        let okAll = true;
+        for (const k of pack.keys){
+          const ok = await markPayoutPaid({ day:k.day, name, amount:k.amount, note:memo });
+          if (!ok) okAll = false;
+        }
+        if (okAll){ row.remove(); okCount++; }
+      }
+      alert(`${okCount} 名を更新しました`);
+    });
+  }
+
+  // 4) 下段：履歴（最大20件表示）パネル（自前スクロール）
+  const hist = (PAYOUTS_HISTORY||[]).slice(0,20);
+  if (!hist.length){
+    histBox.innerHTML = `
+      <div class="payoutsPanel">
+        <div class="payoutsHead"><div style="font-weight:700">支払履歴</div></div>
+        <div style="color:#64748b">（履歴はまだありません）</div>
+      </div>`;
+  }else{
+    const lines = hist.map(h=>{
+      const when = h.paidAt ? h.paidAt.toLocaleString('ja-JP',{hour12:false}) : '';
+      return `
+        <div class="payoutRow" style="display:grid; grid-template-columns: 1fr auto auto; gap:8px;">
+          <div>
+            <div><b>${esc(h.name)}</b> / ${bizDayLabel(h.day)}</div>
+            ${h.note ? `<div style="font-size:12px;color:#64748b">メモ：${esc(h.note)}</div>` : ''}
+          </div>
+          <div style="text-align:right;font-weight:800">¥${h.amount.toLocaleString()}</div>
+          <div style="font-size:12px;color:#64748b;white-space:nowrap;align-self:center">${esc(when)}</div>
+        </div>
+      `;
+    }).join('');
+
+    histBox.innerHTML = `
+      <div class="payoutsPanel">
+        <div class="payoutsHead"><div style="font-weight:700">支払履歴</div></div>
+        <div id="payoutsHistScroll" class="payoutsScroll">${lines}</div>
+      </div>
+    `;
+
+    // 行高を計測して6行ぶんの高さを安定化
+    const firstH = histBox.querySelector('.payoutRow');
+    if (firstH){
+      const h = Math.ceil(firstH.getBoundingClientRect().height);
+      histBox.style.setProperty('--payoutRowH', h + 'px');
+    }
+  }
+}
+
+window.renderPayoutsPage = renderPayoutsPage;
+
+// 「インデックス（営業日リスト）」を描画
+function renderPayrollIndex(){
+  const root = document.getElementById('payrollListBox');
+  if (!root) return;
+
+  // 売上の営業日単位にまとめる（売上がない日は表示しない）
+  const groups = groupSalesByBizDay(SALES_ROWS_CACHE||[]);
+  let keys = Object.keys(groups).sort().reverse();
+  if (!keys.length){
+    root.innerHTML = '<div style="color:#64748b">（売上データがありません）</div>';
+    return;
+  }
+
+  const cards = keys.map(k=>{
+  const preview = computePayrollForDay(k, groups[k]); // 自動：CAST/BOY/売上
+  const status = PAYROLL_INDEX[k]?.exists ? '確定済' : '未確定';
+
+  // その日のローカル追加入力を合算
+  const ex = getExtrasSafe(k); // { manualAdds:{}, extra:[] }
+  const manualAddsSum = Object.values(ex.manualAdds||{}).reduce((a,b)=>a+Number(b||0),0);
+  const manualExtraSum= (ex.extra||[]).reduce((a,b)=>a+Number(b.amount||0),0);
+  const manualTotal = manualAddsSum + manualExtraSum;
+
+  const totalPayout = Number(preview.totals.cast||0) + Number(preview.totals.boy||0) + manualTotal;
+  const href  = `#admin-payroll/${k}`;
+
+  return `
+    <a href="${href}" style="
+      display:block; padding:12px; margin:8px 0; border:1px solid #e5e7eb;
+      border-radius:12px; background:#fff; text-decoration:none; color:inherit;">
+      <div style="display:flex; align-items:center; gap:8px; justify-content:space-between;">
+        <div>
+          <div style="font-weight:700">${bizDayLabel(k)}</div>
+          <div style="font-size:12px; color:#64748b">
+            ${status}／合計売上：¥${Number(preview.totals.sales||0).toLocaleString()}
+          </div>
+          <div style="font-size:12px; color:#475569; margin-top:4px">
+            総支払額：<b>¥${totalPayout.toLocaleString()}</b>
+            <span style="color:#64748b">（CAST ¥${Number(preview.totals.cast||0).toLocaleString()} ／ BOY ¥${Number(preview.totals.boy||0).toLocaleString()} ／ 追加入力 ¥${manualTotal.toLocaleString()}）</span>
+          </div>
         </div>
       </div>
-      <div id="roster" class="roster"></div>
-    </section>
-  </section>
+    </a>
+  `;
+}).join('');
 
-  <!-- ページ②：売上入力 -->
-  <section id="pageSales" class="page">
-    <section id="salesSection">
-      <div class="sales-card">
-        <div class="sales-grid">
-          <label>ボーイ（1名）
-            <div id="boyField" class="pickerField empty" aria-label="ボーイを選択">タップして選択</div>
-          </label>
-          <label>キャスト（複数可）
-            <div id="castField" class="pickerField empty" aria-label="キャストを選択">タップして選択</div>
-          </label>
-        </div>
+  root.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <h2 style="margin:0">給料支払い（日別）</h2>
+    </div>
+    ${cards}
+  `;
+}
+window.renderPayrollIndex = renderPayrollIndex;
 
-        <div id="salesLines"></div>
+// 日別ページを描画
+async function renderPayrollDay(dayKey){
+  const root = document.getElementById('payrollListBox');
+  if (!root) return;
 
-        <div class="sales-actions">
-          <button id="addSalesLine" type="button" class="sales-pill">＋ 明細行を追加</button>
-          <button id="submitSales"  type="button" class="sales-pill">送信</button>
-          <button id="reloadSales"  type="button" class="sales-pill">更新（商品・名簿）</button>
-        </div>
+  // その日の売上（自動計算のベース）
+  const groups  = groupSalesByBizDay(SALES_ROWS_CACHE||[]);
+  const rows    = groups[dayKey] || [];
+  const preview = computePayrollForDay(dayKey, rows); // {entries, totals}
 
-        <div class="sales-total">合計：<span id="salesTotal">¥0</span></div>
+  // 追加入力・追加支払者（ローカル保持）
+  const extras  = getExtrasSafe(dayKey);
+  const adds    = extras.manualAdds;                  // { name: number }
+  const extraRs = extras.extra;                       // [{name, role, amount}]
+
+  // 確定済みチェック
+  const confirmed = !!PAYROLL_INDEX[dayKey]?.exists;
+
+  // テーブル行の計算（自動 + 手入力）
+  function buildAllRows(){
+    const baseRows = preview.entries.map(e => {
+      const plus = Number(adds[e.name] || 0);
+      return {
+        name:  e.name,
+        role:  e.role,                 // 'cast' | 'boy'
+        base:  Number(e.amount || 0),  // 自動
+        plus:  plus,                   // 手入力
+        total: Number(e.amount || 0) + plus
+      };
+    });
+
+    const extraRows = extraRs.map(r => ({
+      name:  String(r.name || ''),
+      role:  (r.role === 'boy' ? 'boy' : 'cast'),
+      base:  0,
+      plus:  Number(r.amount || 0),
+      total: Number(r.amount || 0),
+      _extra:true                     // 追加行フラグ
+    }));
+
+    // 名前昇順 / cast→boy の順
+    const all = [...baseRows, ...extraRows].sort((a,b)=>{
+      if (a.role!==b.role) return a.role==='cast' ? -1 : 1;
+      return String(a.name).localeCompare(String(b.name),'ja');
+    });
+    return all;
+  }
+
+  function sumByRole(all, role){
+    return all.filter(x=>x.role===role).reduce((a,b)=>a+Number(b.total||0),0);
+  }
+
+  // DOM 描画
+  function render(){
+    const all = buildAllRows();
+    const castSum = sumByRole(all, 'cast');
+    const boySum  = sumByRole(all, 'boy');
+    const shop    = Math.max(0, Number(preview.totals.sales||0) - castSum - boySum);
+
+    const rowsHTML = all.map(r => `
+  <tr data-name="${esc(r.name)}" data-role="${r.role}" data-base="${Number(r.base)}" ${r._extra?'data-extra="1"':''}>
+    <td style="padding:8px;border-bottom:1px dashed #eef2f6">${esc(r.name)}</td>
+    <td style="padding:8px;border-bottom:1px dashed #eef2f6">${r.role==='cast'?'キャスト':'ボーイ'}</td>
+
+    <!-- 金額（自動） -->
+    <td style="padding:8px;border-bottom:1px dashed #eef2f6;text-align:right">¥${Number(r.base).toLocaleString()}</td>
+
+    <!-- 追加入力（手入力のみ） -->
+    <td style="padding:8px;border-bottom:1px dashed #eef2f6;text-align:right;min-width:200px">
+      <span class="payroll-inline">
+        <input type="number" inputmode="numeric" class="pr-plus"
+               value="${Number(r.plus)}" ${confirmed ? 'disabled' : ''}>
+      </span>
+    </td>
+
+    <!-- 総支払額（右端に削除ボタンを配置：追加行のみ表示） -->
+    <td class="pr-total" style="padding:8px;border-bottom:1px dashed #eef2f6;text-align:right;">
+      <span class="pr-total-cell">
+        <span class="pr-total-amt">¥${Number(r.total).toLocaleString()}</span>
+        ${r._extra ? `<button type="button" class="btn-extra-del" ${confirmed?'disabled':''} title="この追加行を削除">削除</button>` : ''}
+      </span>
+    </td>
+  </tr>
+`).join('');
+
+    root.innerHTML = `
+      <div style="margin:6px 0 10px;color:#64748b">${bizDayLabel(dayKey)} の配当プレビュー</div>
+      <div style="overflow:auto">
+        <table style="border-collapse:collapse;width:100%;background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+          <thead>
+            <tr style="background:#0C0C0E">
+              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">名前</th>
+              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">区分</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb">金額（自動）</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb">追加入力</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb">総支払額</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHTML}</tbody>
+          <tfoot>
+  <tr style="background:#0C0C0E">
+    <td style="padding:8px;font-weight:700">合計</td>
+    <td style="padding:8px">CAST / BOY / 店 / 追加入力</td>
+    <td style="padding:8px;text-align:right">売上 ¥${Number(preview.totals.sales||0).toLocaleString()}</td>
+    <td style="padding:8px;text-align:right"></td>
+    <td style="padding:8px;text-align:right">
+      CAST <span class="sum-cast">¥0</span> ／
+      BOY  <span class="sum-boy">¥0</span> ／
+      店   <span class="sum-shop">¥0</span> ／
+      追加入力 <span class="sum-manual">¥0</span>
+    </td>
+  </tr>
+</tfoot>
+
+
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+        <button type="button" class="sales-pill" onclick="location.hash='#admin-payroll'">← 日一覧へ</button>
+        ${confirmed
+          ? `<span class="pill" style="background:#e7ffe7;border:1px solid #34a853;color:#0b6630">確定済</span>
+             <button id="prReopen" type="button" class="sales-pill danger">確定を取り消す</button>`
+          : `<button id="btnAddPayer" type="button" class="sales-pill">＋ 支払者を追加</button>
+             <button id="prConfirm"  type="button" class="sales-pill">この日を確定する</button>`
+        }
       </div>
-    </section>
-  </section>
+    `;
 
-</main>
+    // 合計の表示だけ更新するユーティリティ
+function refreshFooterSums(){
+  // 自動配当分のみの合計
+  const baseCast = preview.entries.filter(e=>e.role==='cast')
+                    .reduce((a,b)=>a+Number(b.amount||0),0);
+  const baseBoy  = preview.entries.filter(e=>e.role==='boy')
+                    .reduce((a,b)=>a+Number(b.amount||0),0);
 
-<!-- 卓編集モーダル（既存） -->
+  // 追加入力（手入力）合計：manualAdds + extraRs
+  const manualSumFromAdds = Object.values(adds||{}).reduce((a,b)=>a+Number(b||0),0);
+  const manualSumFromExtra= (extraRs||[]).reduce((a,b)=>a+Number(b.amount||0),0);
+  const manualTotal = manualSumFromAdds + manualSumFromExtra;
+
+  const salesTotal = Number(preview.totals.sales||0);
+  const shop = Math.max(0, salesTotal - baseCast - baseBoy - manualTotal);
+
+  const fmt = n => '¥' + Number(n||0).toLocaleString();
+
+  root.querySelector('.sum-cast').textContent   = fmt(baseCast);
+  root.querySelector('.sum-boy').textContent    = fmt(baseBoy);
+  root.querySelector('.sum-manual').textContent = fmt(manualTotal);
+  root.querySelector('.sum-shop').textContent   = fmt(shop);
+}
+
+refreshFooterSums();
+
+// 追加入力の変更イベント（入力中に全体は再描画しない）
+root.querySelectorAll('.pr-plus').forEach(inp=>{
+  const tr = inp.closest('tr');
+  const base = Number(tr?.dataset.base || 0);
+  const totalAmtSpan = tr?.querySelector('.pr-total-amt');
+
+  // 初期の合計表示
+  if (totalAmtSpan) totalAmtSpan.textContent = '¥' + (base + Number(inp.value||0)).toLocaleString();
+
+  // 入力中：値を反映して行とフッターだけ更新
+  inp.addEventListener('input', ()=>{
+    const name = tr?.dataset.name || '';
+    const isExtra = tr?.dataset.extra === '1';
+    const v = Math.max(0, Number(inp.value || 0));
+
+    if (isExtra){
+      const idx = extraRs.findIndex(r => r.name===name);
+      if (idx>=0) extraRs[idx].amount = v;
+    }else{
+      adds[name] = v;
+    }
+    savePayrollExtras(dayKey, { manualAdds: adds, extra: extraRs });
+
+    // 行の合計だけ更新（ボタンは消さない）
+    if (totalAmtSpan) totalAmtSpan.textContent = '¥' + (base + v).toLocaleString();
+
+    // 下の合計
+    refreshFooterSums();
+  });
+
+  // フォーカス外れで正規化
+  inp.addEventListener('blur', ()=>{
+    const v = Math.max(0, Number(inp.value || 0));
+    inp.value = v;
+  });
+});
+
+// 追加行の削除（UIだけ更新してフッター再計算）
+root.querySelectorAll('.btn-extra-del').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const tr   = btn.closest('tr');
+    const name = tr?.dataset.name || '';
+    const idx  = extraRs.findIndex(r => r.name===name);
+    if (idx>=0){
+      extraRs.splice(idx,1);
+      savePayrollExtras(dayKey, { manualAdds: adds, extra: extraRs });
+      // 行をDOMから消す
+      tr.remove();
+      refreshFooterSums();
+    }
+  });
+});
+
+    // 追加ピッカー（検索＋チップ）
+function openAddPicker(){
+  const wrap  = document.getElementById('payrollAddWrap');
+  const list  = document.getElementById('paList');
+  const qInp  = document.getElementById('paSearch');
+  const amtInp= document.getElementById('paAmount');
+  const btnAdd= document.getElementById('paAdd');
+  const btnClose = document.getElementById('paClose');
+
+  // 既に入っている人は除外
+  const already = new Set(buildAllRows().map(r=>r.name));
+  const choices = (window.STAFF_MASTER || []).filter(s => !already.has(s.name));
+
+  let picked = ''; // クリックで選んだ人の名前
+  let q = '';
+
+  function renderChips(){
+    const view = choices
+      .filter(s => !q || s.name.includes(q))
+      .map(s => ({
+        name: s.name,
+        role: (s.role === 'boy' ? 'boy' : 'cast'),
+      }));
+
+    list.innerHTML = view.map(v => `
+      <button type="button"
+        class="staffChip on ${picked===v.name?'selected':''}"
+        data-name="${esc(v.name)}"
+        title="${v.role==='boy'?'ボーイ':'キャスト'}">
+        ${esc(v.name)}
+      </button>
+    `).join('');
+
+    list.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const n = b.dataset.name || '';
+        picked = (picked === n) ? '' : n;
+        renderChips();
+      });
+    });
+
+    // 1人選ばれていないと追加ボタンは押せない
+    btnAdd.disabled = !picked;
+  }
+
+  qInp.value = '';
+  amtInp.value = '0';
+  picked = '';
+  renderChips();
+
+  qInp.oninput = () => { q = (qInp.value||'').trim(); renderChips(); };
+  btnClose.onclick = () => { wrap.style.display='none'; wrap.setAttribute('aria-hidden','true'); };
+
+  btnAdd.onclick = () => {
+    if (!picked) return;
+    const role = (window.STAFF_MASTER.find(s=>s.name===picked)?.role === 'boy') ? 'boy' : 'cast';
+    const amount = Math.max(0, Number(amtInp.value || 0));
+    extraRs.push({ name:picked, role, amount });
+    savePayrollExtras(dayKey, { manualAdds: adds, extra: extraRs });
+
+    // テーブル側を再構成して見せる（ここだけ再描画）
+    render();
+
+    // モーダルを閉じる
+    wrap.style.display='none'; wrap.setAttribute('aria-hidden','true');
+  };
+
+  // 開く
+  wrap.style.display='grid';
+  wrap.removeAttribute('aria-hidden');
+  qInp.focus();
+}
+
+root.querySelector('#btnAddPayer')?.addEventListener('click', openAddPicker);
+
+    // 確定／取り消し
+root.querySelector('#prConfirm')?.addEventListener('click', async ()=>{
+  const all = buildAllRows();
+  if (!confirm('この日の給料を確定します。よろしいですか？')) return;
+
+  try{
+    // ① 給料ドキュメントを確定保存
+    await setDoc(
+      doc(payrollCol, dayKey),
+      {
+        day: dayKey,
+        // 確定は “総支払額” を entries.amount として保存
+        entries: all.map(r => ({ name:r.name, role:r.role, amount: Math.round(r.total) })),
+        totals: {
+          sales: Math.round(Number(preview.totals.sales||0)),
+          cast:  Math.round(sumByRole(all,'cast')),
+          boy:   Math.round(sumByRole(all,'boy')),
+          shop:  Math.round(
+                   Math.max(
+                     0,
+                     Number(preview.totals.sales||0)
+                       - sumByRole(all,'cast')
+                       - sumByRole(all,'boy')
+                   )
+                 )
+        },
+        // 監査用に内訳も残す
+        meta: {
+          base: preview.entries,
+          manualAdds: adds,
+          extra: extraRs
+        },
+        salesTotal: Math.round(Number(preview.totals.sales||0)),
+        createdAt: serverTimestamp(),
+        confirmedAt: serverTimestamp()
+      },
+      { merge: false }
+    );
+
+    // ② 未払い雛形（payouts）を作成/更新（既存あれば温存）
+    try{
+      await Promise.all(all.map(r=>{
+        const id = `${dayKey}__${r.name}`.replace(/\//g,'／');
+        return setDoc(
+          doc(payoutsCol, id),
+          {
+            id, day: dayKey, name: r.name,
+            amount: Math.round(Number(r.total||0)),
+            paid: false,
+            updatedAt: serverTimestamp()
+          },
+          { merge: true }
+        );
+      }));
+    }catch(_){ /* 雛形は失敗しても致命ではないので握りつぶし */ }
+
+    alert('確定しました');
+  }catch(e){
+    alert('確定に失敗しました: ' + (e?.message || e));
+  }
+});
+
+root.querySelector('#prReopen')?.addEventListener('click', async ()=>{
+  if (!confirm('確定を取り消しますか？（ドキュメントを削除）')) return;
+  try{
+    await deleteDoc(doc(payrollCol, dayKey));
+    alert('確定を取り消しました');
+  }catch(e){
+    alert('取り消しに失敗しました: ' + (e?.message || e));
+  }
+});
+
+  }
+
+  render();
+}
+
+window.renderPayrollDay = renderPayrollDay;
+
+  // --- sales（ルーターからも使うので公開）---
+window.getSalesDayFromHash        = getSalesDayFromHash;
+window.renderSalesIndex           = renderSalesIndex;
+window.renderSalesGroupedByBizDay = renderSalesGroupedByBizDay;
+
+// 新しい順で表示
+onSnapshot(salesCol, (qs)=>{
+  const rows=[];
+  qs.forEach(d=>{
+    const data = d.data() || {};
+    rows.push({
+      id: d.id,
+      ...data,
+      createdAt: data.createdAt || null
+    });
+  });
+  rows.sort((a,b)=>{
+    const ta = a.createdAt?.seconds || 0;
+    const tb = b.createdAt?.seconds || 0;
+    return tb - ta;
+  });
+
+  
+  SALES_ROWS_CACHE = rows;                    // ★
+  window.SALES_ROWS_CACHE = rows; 
+
+// 現在のハッシュに応じて描画
+const day = getSalesDayFromHash(); // 例: "2025-10-30" or null
+if (day) {
+  renderSalesGroupedByBizDay(SALES_ROWS_CACHE, day);  // 日別ページ
+} else {
+  renderSalesIndex(SALES_ROWS_CACHE);                 // 日一覧
+}
+
+});
+
+  // 支払状況キャッシュ
+let PAYOUTS_INDEX = {};   // id: `${day}__${name}` -> { paid, note, history[], paidAt, amount, ... }
+let PAYOUTS_HISTORY = []; // 表示用（支払済ログ）
+onSnapshot(payoutsCol, (qs)=>{
+  const next = {};
+  const hist = [];
+  qs.forEach(d=>{
+    const data = d.data() || {};
+    next[d.id] = { id:d.id, ...data };
+    if (data.paid === true) {
+      hist.push({
+        id: d.id,
+        name: data.name || '',
+        day:  data.day  || '',
+        amount: Number(data.amount||0),
+        note: data.note || '',
+        paidAt: data.paidAt?.seconds ? new Date(data.paidAt.seconds*1000) : null
+      });
+    }
+  });
+  // 新しい順
+  hist.sort((a,b)=> (b.paidAt?.getTime()||0) - (a.paidAt?.getTime()||0));
+  PAYOUTS_INDEX = next;
+  PAYOUTS_HISTORY = hist;
+  // 表示中が未払いページなら更新
+  if (location.hash.startsWith('#admin-payouts')) {
+    renderPayoutsPage();
+  }
+});
+
+  // ===== 売上レコード 編集モーダル =====
+function openSalesEditModal(rec){
+  // 既存があれば消す
+  document.getElementById('salesEditWrap')?.remove();
+
+  // 編集用のローカル状態
+  let items = (rec.rows||[]).map(it=>({
+    product: String(it.product||''),
+    unitPrice: Number(it.unitPrice||0),
+    qty: Number(it.qty||0)
+  })).filter(it=>it.product);
+
+  // 合計
+  const calcTotal = () => items.reduce((a,b)=> a + Number(b.unitPrice||0)*Number(b.qty||0), 0);
+
+  // 1商品追加（同一商品＆単価は数量+1）
+  function addItem(pName, price){
+    const found = items.find(x=>x.product===pName && Number(x.unitPrice)===Number(price));
+    if(found){ found.qty = Number(found.qty||0)+1; }
+    else{ items.push({ product:pName, unitPrice:Number(price||0), qty:1 }); }
+    renderList();
+  }
+
+  // 数量変更/削除
+  function setQty(idx, qty){
+    if (qty<=0){ items.splice(idx,1); }
+    else { items[idx].qty = qty; }
+    renderList();
+  }
+
+  // モーダル本体
+  const wrap = document.createElement('div');
+  wrap.id = 'salesEditWrap';
+  wrap.className = 'modalWrap';
+  wrap.style.display = 'grid';
+  wrap.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" style="max-width:920px;">
+      <h3 style="margin:0 0 10px">売上を編集</h3>
+
+      <div class="row">
+        <input id="se-seat"  placeholder="席ラベル" value="${esc(rec.seatLabel||rec.seatId||'')}">
+        <input id="se-boy"   placeholder="ボーイ"    value="${esc(rec.boy||'')}">
+      </div>
+      <div class="row">
+        <input id="se-cast"  placeholder="キャスト（カンマ区切り）" value="${esc((rec.cast||[]).join(', '))}">
+      </div>
+
+      <!-- 席の売上UIと同じ3分割：検索＋商品 / 明細スクロール / 合計＋保存 -->
+      <div class="row">
+        <input id="seSearch" class="prodSearch" placeholder="商品を検索（例: 指名, ボトル, 同伴）">
+      </div>
+      <div id="seProdGrid" class="prodGrid" style="margin-bottom:4px"></div>
+
+      <div class="salesList" id="seList" style="max-height:calc(var(--rowH,48px)*8 + 8px); overflow:auto; overscroll-behavior:contain;"></div>
+
+      <div class="salesFoot">
+        <div class="salesTotalBig">合計：<span id="seTotal">${yen(calcTotal())}</span></div>
+        <div class="btns">
+          <button id="se-save"   class="sales-pill" type="button">保存</button>
+          <button id="se-cancel" class="sales-pill secondary" type="button">キャンセル</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+
+  const close = ()=>wrap.remove();
+  wrap.addEventListener('click', e=>{ if(e.target===wrap) close(); });
+  wrap.querySelector('#se-cancel').addEventListener('click', close);
+
+  const seSearch   = wrap.querySelector('#seSearch');
+  const seProdGrid = wrap.querySelector('#seProdGrid');
+  const seList     = wrap.querySelector('#seList');
+  const seTotal    = wrap.querySelector('#seTotal');
+
+  // 商品チップ描画
+  function buildProdGrid(q=''){
+    const list = (PRODUCTS_MASTER||[]).filter(p => !q || p.name.includes(q));
+    seProdGrid.innerHTML = list.map(p => `
+      <button type="button" class="prodChip" data-name="${esc(p.name)}" data-price="${p.price}">
+        ${esc(p.name)}（${yen(p.price)}）
+      </button>
+    `).join('');
+    seProdGrid.querySelectorAll('.prodChip').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        addItem(btn.dataset.name, Number(btn.dataset.price));
+      });
+    });
+  }
+  buildProdGrid();
+  seSearch?.addEventListener('input', e => buildProdGrid((e.target.value||'').trim()));
+
+  // 明細描画
+  function renderList(){
+    seList.innerHTML = items.map((it,i)=>`
+      <div class="salesItem" data-idx="${i}">
+        <div>${esc(it.product)}</div>
+        <div class="yen">${yen(it.unitPrice)}</div>
+        <div class="qtyCtrl">
+          <button type="button" class="qminus">－</button>
+          <input type="number" min="0" step="1" value="${Number(it.qty||0)}">
+          <button type="button" class="qplus">＋</button>
+        </div>
+        <div class="yen">${yen(Number(it.unitPrice||0) * Number(it.qty||0))}</div>
+      </div>
+    `).join('');
+
+    // 行高を測って8行スクロールの高さを安定化
+    const firstRow = seList.querySelector('.salesItem');
+    if (firstRow){
+      const h = Math.ceil(firstRow.getBoundingClientRect().height);
+      seList.style.setProperty('--rowH', h + 'px');
+    }
+
+    seList.querySelectorAll('.salesItem').forEach(row=>{
+      const idx = Number(row.dataset.idx||0);
+      const input = row.querySelector('input');
+      row.querySelector('.qminus').addEventListener('click',()=>{
+        const v = Math.max(0, Number(input.value||0)-1);
+        input.value = v; setQty(idx, v);
+      });
+      row.querySelector('.qplus').addEventListener('click',()=>{
+        const v = Number(input.value||0)+1;
+        input.value = v; setQty(idx, v);
+      });
+      input.addEventListener('input',()=>{
+        const v = Math.max(0, Number(input.value||0));
+        setQty(idx, v);
+      });
+    });
+
+    seTotal.textContent = yen(calcTotal());
+  }
+  renderList();
+
+  // 保存（Firestore へ書き戻し）
+  wrap.querySelector('#se-save').addEventListener('click', async ()=>{
+    const seatLabel = (wrap.querySelector('#se-seat').value||'').trim();
+    const boy  = (wrap.querySelector('#se-boy').value||'').trim();
+    const cast = (wrap.querySelector('#se-cast').value||'')
+                  .split(',')
+                  .map(v=>v.trim())
+                  .filter(Boolean);
+
+    const cleanRows = items
+      .filter(it => it.product && Number(it.qty)>0)
+      .map(it => ({
+        product: it.product,
+        unitPrice: Number(it.unitPrice||0),
+        qty: Number(it.qty||0)
+      }));
+
+    const total = cleanRows.reduce((a,b)=> a + Number(b.unitPrice||0)*Number(b.qty||0), 0);
+
+    try{
+      await setDoc(
+        doc(salesCol, rec.id),
+        {
+          seatLabel, boy, cast,
+          rows: cleanRows,
+          total: total,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+      close();
+    }catch(e){
+      alert('保存に失敗しました: ' + (e?.message || e));
+    }
+  });
+}
+
+  /* ========= データ（集計） ========= */
+
+// Firestore Timestamp → ms
+function tsToMs(ts){
+  if (!ts) return 0;
+  if (typeof ts.toMillis === 'function') return ts.toMillis();
+  if (typeof ts.seconds === 'number') return ts.seconds*1000;
+  if (ts instanceof Date) return ts.getTime();
+  return 0;
+}
+
+// 2:00区切りの営業日キー
+function bizKeyFromMs(ms){
+  if (!ms) return 'unknown';
+  const d = new Date(ms);
+  if (d.getHours() < 2) d.setDate(d.getDate()-1);
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd= String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+
+// 合計/集計を算出  ← この関数を差し替え
+function buildAnalytics(rows){
+  const prod = {};            // name -> {qty, revenue}
+  const cast = {};            // name -> {checks, revenue}
+  const boy  = {};            // name -> {checks, revenue}
+  const seat = {};            // label/id -> {checks, revenue}
+  const daily= {};            // bizKey -> {count, revenue}
+
+  // ★ 追加：営業日ごとのキャスト売上（配当基準）
+  //   dailyCast[bizKey][castName] = revenue(Number)
+  const dailyCast = {};       
+
+  let salesSum = 0;
+  let checkCount = 0;
+
+  for (const r of rows){
+    const total = Number(r.total||0);
+    salesSum += total;
+    checkCount++;
+
+    const bizKey = bizKeyFromMs(tsToMs(r.createdAt));
+
+    // products
+    (Array.isArray(r.rows)?r.rows:[]).forEach(it=>{
+      if (!it || !it.product) return;
+      const name = String(it.product);
+      const qty  = Number(it.qty||0);
+      const amt  = Number(it.unitPrice||0)*qty;
+      (prod[name] ||= {qty:0, revenue:0});
+      prod[name].qty     += qty;
+      prod[name].revenue += amt;
+    });
+
+    // cast（均等割：total を人数割り）
+const casts = (Array.isArray(r.cast)?r.cast:[]).map(n=>String(n||'').trim()).filter(Boolean);
+if (casts.length){
+  const per = total / casts.length;   // ← ここを 0.7 ではなく “全額の均等割り” に
+  // 期間合算
+  casts.forEach(n=>{
+    (cast[n] ||= {checks:0, revenue:0});
+    cast[n].checks  += 1;
+    cast[n].revenue += per;
+  });
+
+  // 日別（ランキング用）
+  (dailyCast[bizKey] ||= {});
+  casts.forEach(n=>{
+    dailyCast[bizKey][n] = (dailyCast[bizKey][n] || 0) + per;
+  });
+}
+
+    // boy（配分：total*0.2）
+    if (r.boy){
+      const name = String(r.boy).trim();
+      (boy[name] ||= {checks:0, revenue:0});
+      boy[name].checks  += 1;
+      boy[name].revenue += total * 0.2;
+    }
+
+    // seat
+    const label = r.seatLabel || r.seatId || '';
+    if (label){
+      (seat[label] ||= {checks:0, revenue:0});
+      seat[label].checks  += 1;
+      seat[label].revenue += total;
+    }
+
+    // daily
+    (daily[bizKey] ||= {count:0, revenue:0});
+    daily[bizKey].count  += 1;
+    daily[bizKey].revenue+= total;
+  }
+
+  const avg = checkCount ? Math.round(salesSum / checkCount) : 0;
+
+  // 並び替えユーティリティ
+  const objToSorted = (obj, by) => Object.entries(obj).map(([name,v])=>({name,...v}))
+    .sort((a,b)=> Number(b[by]||0) - Number(a[by]||0));
+
+  return {
+    kpi: { salesSum, checkCount, avg },
+    productsByQty: objToSorted(prod,'qty'),
+    productsByRev: objToSorted(prod,'revenue'),
+    castByRev:     objToSorted(cast,'revenue'),
+    castByUse:     objToSorted(cast,'checks'),
+    boyByRev:      objToSorted(boy,'revenue'),
+    boyByUse:      objToSorted(boy,'checks'),
+    seatByRev:     objToSorted(seat,'revenue'),
+    seatByUse:     objToSorted(seat,'checks'),
+    daily: Object.entries(daily).map(([day,v])=>({day, ...v}))
+      .sort((a,b)=> a.day < b.day ? 1 : -1),
+
+    // ★ 追加：日別キャスト売上（配当基準）
+    dailyCast
+  };
+}
+
+// 数値 → 通貨
+const fmtYen = n => '¥' + Number(n||0).toLocaleString();
+
+// シンプルバー描画
+function barTable(list, {labelKey='name', valueKey='revenue', valueFmt=fmtYen, maxRows=20}={}){
+  if (!list || !list.length) return `<div style="color:#64748b">（データなし）</div>`;
+  const top = list.slice(0, maxRows);
+  const max = Math.max(...top.map(x=>Number(x[valueKey]||0)));
+  const pct = v => max ? Math.round(100*Number(v||0)/max) : 0;
+  return `
+    <div class="tableLike">
+      ${top.map(x=>`
+        <div class="barRow">
+          <div class="barLabel" title="${x[labelKey]}">${x[labelKey]}</div>
+          <div class="barWrap"><div class="barFill" style="width:${pct(x[valueKey])}%"></div></div>
+          <div class="barVal">${valueFmt(x[valueKey])}</div>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+function gridTable(list, {cols, maxRows=50}){
+  if (!list || !list.length) return `<div style="color:#64748b">（データなし）</div>`;
+  const top = list.slice(0, maxRows);
+  return `
+    <div class="tableLike">
+      <div class="tHead">
+        ${cols.map(c=>`<div class="tCell ${c.right?'tRight':''}">${c.label}</div>`).join('')}
+      </div>
+      ${top.map(x=>`
+        <div class="tRow">
+          ${cols.map(c=>{
+            const v = (typeof c.get==='function') ? c.get(x) : x[c.key];
+            return `<div class="tCell ${c.right?'tRight':''}">${v}</div>`;
+          }).join('')}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// 期間フィルタ
+function filterByRange(all){
+  const fromEl = document.getElementById('anaFrom');
+  const toEl   = document.getElementById('anaTo');
+  const from = fromEl?.value ? new Date(fromEl.value+'T00:00:00').getTime() : null;
+  const to   = toEl?.value   ? new Date(toEl.value  +'T23:59:59').getTime() : null;
+  return all.filter(r=>{
+    const t = tsToMs(r.createdAt);
+    if (from && t < from) return false;
+    if (to   && t > to)   return false;
+    return true;
+  });
+}
+
+// 初期レンダリング
+function renderAnalytics(){
+  const root = document.getElementById('adminAnalytics');
+  if (!root) return;
+
+  // 初期日付（直近30日）
+  const fromEl = document.getElementById('anaFrom');
+  const toEl   = document.getElementById('anaTo');
+  if (fromEl && !fromEl.value){
+    const toD = new Date(); const fromD = new Date(); fromD.setDate(toD.getDate()-30);
+    const fmt = d => d.toISOString().slice(0,10);
+    fromEl.value = fmt(fromD);
+    toEl.value   = fmt(toD);
+  }
+
+  // 現在の全売上 → 期間フィルタ
+  const rows = filterByRange(window.SALES_ROWS_CACHE || []);
+  const A = buildAnalytics(rows);
+
+  // KPI
+  const kpiBox = document.getElementById('anaKpi');
+  if (kpiBox){
+    kpiBox.innerHTML = `
+      <div class="metricCard">
+        <div class="metricNote">期間合計売上</div>
+        <div class="metricValue">${fmtYen(A.kpi.salesSum)}</div>
+      </div>
+      <div class="metricCard">
+        <div class="metricNote">会計件数</div>
+        <div class="metricValue">${A.kpi.checkCount.toLocaleString()} 件</div>
+      </div>
+      <div class="metricCard">
+        <div class="metricNote">平均会計額</div>
+        <div class="metricValue">${fmtYen(A.kpi.avg)}</div>
+      </div>
+      <div class="metricCard">
+        <div class="metricNote">対象期間</div>
+        <div class="metricValue">${
+          (document.getElementById('anaFrom')?.value || '—')
+        } 〜 ${(document.getElementById('anaTo')?.value || '—')}</div>
+      </div>
+    `;
+    // ★ ここで呼ぶ：KPIの次にランキングを表示
+renderDailyCast(A);
+  }
+
+  // 人気商品
+  const proBox = document.getElementById('anaProducts');
+  if (proBox){
+    proBox.innerHTML = `
+      <div style="display:grid; gap:12px">
+        <div>
+          <div style="font-size:12px;color:#64748b;margin-bottom:4px">数量 Top</div>
+          ${barTable(A.productsByQty, {labelKey:'name', valueKey:'qty', valueFmt:(v)=> (Number(v||0)).toLocaleString()+' 点'})}
+        </div>
+        <div>
+          <div style="font-size:12px;color:#64748b;margin:8px 0 4px">売上 Top</div>
+          ${barTable(A.productsByRev, {labelKey:'name', valueKey:'revenue'})}
+        </div>
+      </div>
+    `;
+  }
+
+  // 個人：キャスト
+  const castBox = document.getElementById('anaCast');
+  if (castBox){
+    castBox.innerHTML = gridTable(A.castByRev, {
+      cols: [
+        {label:'名前', key:'name'},
+        {label:'起用回数', get:(x)=> `${(x.checks||0).toLocaleString()} 回`, right:true},
+        {label:'配当目安', get:(x)=> fmtYen(x.revenue||0), right:true},
+      ],
+      maxRows: 50
+    });
+  }
+  // 個人：ボーイ
+  const boyBox = document.getElementById('anaBoy');
+  if (boyBox){
+    boyBox.innerHTML = gridTable(A.boyByRev, {
+      cols: [
+        {label:'名前', key:'name'},
+        {label:'担当回数', get:(x)=> `${(x.checks||0).toLocaleString()} 回`, right:true},
+        {label:'配当目安', get:(x)=> fmtYen(x.revenue||0), right:true},
+      ],
+      maxRows: 50
+    });
+  }
+
+  // 席別
+  const seatBox = document.getElementById('anaSeats');
+  if (seatBox){
+    const tabs = `
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <button id="seatTabUse" class="sales-pill">件数</button>
+        <button id="seatTabRev" class="sales-pill">売上</button>
+      </div>`;
+    const wrapId = 'seatWrap';
+    seatBox.innerHTML = tabs + `<div id="${wrapId}"></div>`;
+    const wrap = document.getElementById(wrapId);
+    const renderSeat = (mode)=>{
+      if (mode==='use'){
+        wrap.innerHTML = barTable(A.seatByUse, {labelKey:'name', valueKey:'checks', valueFmt:(v)=> (Number(v||0)).toLocaleString()+' 件'});
+      }else{
+        wrap.innerHTML = barTable(A.seatByRev, {labelKey:'name', valueKey:'revenue'});
+      }
+    };
+    renderSeat('use');
+    seatBox.querySelector('#seatTabUse')?.addEventListener('click', ()=>renderSeat('use'));
+    seatBox.querySelector('#seatTabRev')?.addEventListener('click', ()=>renderSeat('rev'));
+  }
+
+    // 日別
+  const dailyBox = document.getElementById('anaDaily');
+  if (dailyBox){
+    dailyBox.innerHTML = gridTable(A.daily, {
+      cols: [
+        {label:'営業日', key:'day'},
+        {label:'件数',   get:(x)=> `${(x.count||0).toLocaleString()} 件`, right:true},
+        {label:'売上',   get:(x)=> fmtYen(x.revenue||0), right:true},
+      ],
+      maxRows: 180
+    });
+  }
+
+// 日別キャスト売上ランキング（指定のプレースホルダ #anaDailyCast に描画）
+function renderDailyCast(A){
+  const blk = document.getElementById('anaDailyCast');
+  if (!blk) return;
+
+  const dayKeys = Object.keys(A.dailyCast || {}).sort().reverse();
+  if (!dayKeys.length){
+    blk.innerHTML = `
+      <h3 class="anaH3">日別キャスト売上ランキング</h3>
+      <div style="color:#64748b">（該当データがありません）</div>
+    `;
+    return;
+  }
+
+  const latest = dayKeys[0];
+
+  function renderDay(day){
+    const map = (A.dailyCast || {})[day] || {};
+    const list = Object.entries(map)
+      .map(([name,rev])=>({name, revenue:Math.round(rev)}))
+      .sort((a,b)=> b.revenue - a.revenue);
+
+    const rowsHTML = list.length ? list.map((x,i)=>`
+      <div class="tRow">
+        <div class="tCell">${i+1}</div>
+        <div class="tCell">${x.name}</div>
+        <div class="tCell tRight">¥${Number(x.revenue||0).toLocaleString()}</div>
+      </div>
+    `).join('')
+    : `<div style="color:#64748b;padding:8px">（該当データがありません）</div>`;
+
+    blk.querySelector('#anaDailyCastTable').innerHTML = `
+      <div class="tableLike">
+        <div class="tHead">
+          <div class="tCell">順位</div>
+          <div class="tCell">キャスト</div>
+          <div class="tCell tRight">売上（均等割）</div>
+        </div>
+        ${rowsHTML}
+      </div>
+    `;
+    blk.querySelector('#anaDailyCastLabel').textContent = `${day}（2:00〜翌2:00）`;
+  }
+
+  // 初期UI
+  blk.innerHTML = `
+    <h3 class="anaH3">日別キャスト売上ランキング</h3>
+    <div class="anaFilter" style="margin-top:6px">
+      <label>営業日
+        <select id="anaDailyCastSel" style="border:none;background:transparent;padding:4px">
+          ${dayKeys.map(d=>`<option value="${d}">${d}</option>`).join('')}
+        </select>
+      </label>
+      <div style="margin-left:auto;font-size:12px;color:#64748b" id="anaDailyCastLabel"></div>
+    </div>
+    <div id="anaDailyCastTable"></div>
+  `;
+
+  const sel = blk.querySelector('#anaDailyCastSel');
+  sel.value = latest;
+  sel.addEventListener('change', ()=> renderDay(sel.value));
+  renderDay(latest);
+}
+
+  /* ===== 追加ここまで ===== */
+
+  // フィルタのイベント
+  const apply = ()=> renderAnalytics();
+  document.getElementById('anaApply')?.addEventListener('click', apply);
+  document.querySelectorAll('.anaQuick button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const r = Number(b.dataset.range||0);
+      const fromEl = document.getElementById('anaFrom');
+      const toEl   = document.getElementById('anaTo');
+      const toD = new Date();
+      const fmt = d => d.toISOString().slice(0,10);
+      if (r === 0){ fromEl.value = ''; toEl.value = ''; }
+      else{
+        const fromD = new Date(); fromD.setDate(toD.getDate()-r+1);
+        fromEl.value = fmt(fromD);
+        toEl.value   = fmt(toD);
+      }
+      renderAnalytics();
+    });
+  });
+}
+
+// 売上スナップショット更新のたびに、表示中なら再描画
+// （既存の onSnapshot(salesCol, ...) の末尾に近い所に置くのが安全）
+if (!window.__ANA_WATCHED__) {
+  window.__ANA_WATCHED__ = true;
+  window.addEventListener('hashchange', ()=>{
+    if (location.hash.startsWith('#admin-analytics')) renderAnalytics();
+  });
+}
+
+</script>
+
+  </main>
+
+  <!-- 卓編集モーダル -->
+
 <div class="modalWrap" id="modalWrap" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true">
     <h3 id="modalTitle">卓を編集</h3>
+
+        <div class="salesTabHead">
+      <button id="tabTimer" class="salesTabBtn active" type="button">タイマー</button>
+      <button id="tabSales" class="salesTabBtn" type="button">売上</button>
+    </div>
+
+    <div id="seatSales" class="seatSales" aria-hidden="true">
+      <div class="row">
+        <input id="prodSearch" class="prodSearch" placeholder="商品を検索（例: 指名, ボトル, 同伴）">
+      </div>
+      <div id="prodGrid" class="prodGrid"></div>
+      <div class="salesList" id="seatSalesList"></div>
+      <div class="salesFoot">
+        <div class="salesTotalBig">合計：<span id="seatSalesTotal">¥0</span></div>
+        <div class="btns">
+          <button id="seatSalesSend" class="sales-pill" type="button">登録</button>
+          <button id="seatSalesBack" class="sales-pill secondary" type="button">← タイマーに戻る</button>
+        </div>
+      </div>
+    </div>
+
     <div class="row">
       <input id="cast" placeholder="キャスト（カンマ区切り）" list="castList" />
-      <input id="boy" placeholder="担当ボーイ" list="boyList" />
+      <input id="boy"  placeholder="担当ボーイ"            list="boyList" />
       <datalist id="castList"></datalist>
       <datalist id="boyList"></datalist>
     </div>
+
     <div class="row chips">
       <span class="label" style="color:#374151;border:1px solid #d1d5db;background:#f9fafb;">時間</span>
       <div class="btns">
@@ -263,10 +3195,11 @@
         <button class="quick" data-min="60" type="button">60分</button>
       </div>
     </div>
+
     <div class="row chips">
       <span class="label label-extend">延長</span>
       <div class="btns">
-        <button class="extend" data-min="5" type="button">+5</button>
+        <button class="extend" data-min="5"  type="button">+5</button>
         <button class="extend" data-min="10" type="button">+10</button>
         <button class="extend" data-min="15" type="button">+15</button>
       </div>
@@ -287,24 +3220,25 @@
       <input id="manual" inputmode="numeric" placeholder="分を入力 → 開始" />
       <button id="start" type="button">開始</button>
     </div>
+
     <div class="row btns" style="justify-content:space-between">
       <button id="saveMeta" class="secondary" type="button">キャスト/ボーイを保存</button>
       <div>
-        <button id="clear" class="danger" type="button">クリア（空席）</button>
+        <button id="seatClear" class="danger" type="button">クリア（空席）</button>
         <button id="close" class="secondary" type="button">閉じる</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- NEW: ボーイ/キャスト ピッカーモーダル -->
+<!-- ボーイ/キャスト ピッカーモーダル -->
 <div class="pickerWrap" id="pickerWrap" aria-hidden="true">
   <div class="pickerPanel" role="dialog" aria-modal="true">
     <div class="pickerHead">
       <h3 id="pickerTitle" style="margin:0;font-size:16px">選択</h3>
       <div class="pickerBtns">
         <button id="pickerClear" class="secondary" type="button">全クリア</button>
-        <button id="pickerOk" type="button">決定</button>
+        <button id="pickerOk"    type="button">決定</button>
         <button id="pickerClose" class="secondary" type="button">キャンセル</button>
       </div>
     </div>
@@ -312,533 +3246,888 @@
   </div>
 </div>
 
-<script>
-/* ================= スタッフ（スプシ） ================= */
-const STAFF_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRyaTH8TVNV12iTbB9I2pL65t3ImLMB4-nA2--vaHU5Gc1ok1sCSEw1FUSDfZlVO0Cs8WWMVzF_7MaR/pub?gid=1348648909&single=true&output=csv';
-let staff = []; 
-let dutyMap = JSON.parse(localStorage.getItem('staff.duty.map') || '{}');
-window.staff = staff; window.dutyMap = dutyMap;
+<!-- ========= タイマー/控室/名簿 & ピッカー ========= -->
+<script type="module">
+  import { getApps } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+  import {
+    getFirestore, collection, doc, setDoc, onSnapshot, serverTimestamp, addDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+  // 文字エスケープ（このモジュール用に定義）
+const esc = s => String(s).replace(/[&<>"']/g, m => ({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[m]));
 
-/* ================= 席データ ================= */
-const seats = (() => {
-  const saved = localStorage.getItem('seats.v2');
-  if (saved) {
-    const arr = JSON.parse(saved);
-    arr.forEach(s => {
-      if (s.finished === undefined) s.finished = false;
-      if (s.extendCount === undefined) s.extendCount = 0; // ★追加
-    });
-    return arr; // ★忘れずに返す
+
+  // すでに初期化済みの app を取得
+   // 先に「幹部ロジック」側の初期化/認証完了を待つ
+   if (window.__authReady) await window.__authReady;
+   // それでも間に合わない場合に備えて、getApps() が埋まるまで待機
+   if (!getApps().length) {
+     await new Promise(res => {
+       const id = setInterval(() => {
+         if (getApps().length) { clearInterval(id); res(); }
+       }, 30);
+     });
+   }
+   const app = getApps()[0] || window.firebaseApp;  // 念のためフォールバック
+   const db  = getFirestore(app);
+  const ROOM_ID = "default";
+  const seatsCol = collection(db, 'rooms', ROOM_ID, 'seats');
+  const dutyCol  = collection(db, 'rooms', ROOM_ID, 'duty');
+  const payrollCol = collection(db,'rooms',ROOM_ID,'payroll');
+
+  // このブロックでも pushSeatToFS が必要（別スコープなので再定義）
+  async function pushSeatToFS(s){
+    try{
+      await setDoc(
+        doc(seatsCol, s.id),
+        {
+          id:s.id, group:s.group, label:s.label||'',
+          cast:s.cast||'', boy:s.boy||'',
+          end: s.end ?? null, finished: !!s.finished,
+          extendCount: Number(s.extendCount||0),
+          updatedAt: serverTimestamp(),
+        },
+        { merge:true }
+      );
+    }catch(e){ console.error('[seats] write failed', e); }
   }
-  // 保存が無いときの初期値
-  const a = [];
-  for (let i = 1; i <= 8; i++)
-    a.push({ id:`R${i}`, label:`VIP ${i}`, group:'red',  cast:'', boy:'', end:null, finished:false, extendCount:0 });
-  for (let i = 1; i <= 7; i++)
-    a.push({ id:`B${i}`, label:`ノーマル ${i}`, group:'blue', cast:'', boy:'', end:null, finished:false, extendCount:0 });
-  for (let i = 1; i <= 3; i++)
-    a.push({ id:`V${i}`, label:`超VIP ${i}`, group:'vip',   cast:'', boy:'', end:null, finished:false, extendCount:0 });
-  return a;
-})();
-const save = () => localStorage.setItem('seats.v2', JSON.stringify(seats));
 
+  /* ←以下、あなたの既存コード（座席・UI 等）をそのまま続ける */
 
+  /* === 設定 ほか（ここは従来どおり）=== */
 
-/* --------- 座席座標 --------- */
-const POS={R8:{top:15,left:25,width:13},R7:{top:15,left:39,width:13},R6:{top:15,left:53,width:13},R5:{top:15,left:67,width:13},
-R1:{top:30,left:67,width:13},R2:{top:45,left:67,width:13},R3:{top:30,left:18,width:13},R4:{top:45,left:18,width:13},
-B1:{top:22,left:87,width:10},B2:{top:36,left:87,width:10},B3:{top:50,left:87,width:10},B4:{top:7,left:2,width:10},B5:{top:7,left:12,width:10},B6:{top:65,left:7,width:11},B7:{top:65,left:84,width:11}};
+  const LS_PREFIX = 'tt-dev-';
+  window.LS_PREFIX = LS_PREFIX;
 
-/* ================= 要素参照 ================= */
-const $=s=>document.querySelector(s);
-const floor=$('#floor'), vipWrap=$('#vip'), nowEl=$('#now');
-const wrap=$('#modalWrap'), title=$('#modalTitle');
-const castI=$('#cast'), boyI=$('#boy'), manI=$('#manual');
-const suggCast=$('#suggCast'), suggBoy=$('#suggBoy');
-let currentId=null, lastFocus=null;
-const pageRoots=document.querySelectorAll('header, main');
-
-/* ================= UI生成 ================= */
-function cardHTML(s){
-  const nameByGroup={red:'VIP',blue:'ノーマル',vip:'超VIP'};
-  const num=(s.id.match(/\d+/)||[''])[0];
-  const label=`${nameByGroup[s.group]||s.label} ${num}`;
-  const endAt=s.end?`～ ${formatClock(s.end)}`:'';
-  const ext = (s.extendCount||0) > 0 ? `<span class="extBadge">延×${s.extendCount}</span>` : '';
-
-  return `
-    <div class="line1">
-      <span>${label}</span>
-      <span class="endAt">${endAt}</span>
-    </div>
-    <div class="timer"><span class="remain">${
-      s.end ? formatRemain(s.end-Date.now()) : (s.finished ? '終了' : '空')
-    }</span>${ext}</div>
-    <div class="meta">${(s.cast||'')}${s.boy?' ｜ '+s.boy:''}</div>
-  `;
-}
-
-function addVipSeat(s){const d=document.createElement('div');d.className='vipSeat';d.dataset.id=s.id;d.innerHTML=cardHTML(s);d.addEventListener('click',()=>openModal(s.id));vipWrap.appendChild(d);}
-function addSeatToFloor(s){const pos=POS[s.id];if(!pos)return;const d=document.createElement('div');d.className=`seat ${s.group}`;d.dataset.id=s.id;d.style.top=pos.top+'%';d.style.left=pos.left+'%';d.style.width=pos.width+'%';d.innerHTML=cardHTML(s);d.addEventListener('click',()=>openModal(s.id));floor.appendChild(d);}
-
-/* ================= レイアウト補正 ================= */
-function resizeFloor(){const pad=12;const needed=vipWrap.offsetTop+vipWrap.offsetHeight+pad;$('#floor').style.height=needed+'px';}
-
-/* ================= 描画 ================= */
-function render(){
-  floor.querySelectorAll('.seat').forEach(n=>n.remove());
-  vipWrap.innerHTML='';
-  const q=$('#q').value.trim();
-
-  seats.forEach(s=>{ if(s.group==='vip') addVipSeat(s); else addSeatToFloor(s); });
-
-  floor.querySelectorAll('[data-id]').forEach(el=>{
-    const s=seats.find(x=>x.id===el.dataset.id); const t=el.querySelector('.remain');
-    el.classList.remove('active','warn','danger','highlight');
-    if(s.end){
-      const r=s.end-Date.now();
-      if(r>0){ t.textContent=formatRemain(r); el.classList.add('active'); if(r<=3*60*1000)el.classList.add('danger'); else if(r<=10*60*1000)el.classList.add('warn'); }
-      else{ s.end=null; s.finished=true; save(); t.textContent='終了'; }
-    }else{ t.textContent=s.finished?'終了':'空'; }
-    if(q && s.cast && s.cast.includes(q)) el.classList.add('highlight');
-  });
-  resizeFloor(); renderRoster();
-}
-window.seats=seats; window.render=render;
-
-/* ================= タイマー進行 ================= */
-function tick(){
-  nowEl.textContent=new Date().toLocaleString('ja-JP',{hour12:false});
-  floor.querySelectorAll('[data-id]').forEach(el=>{
-    const s=seats.find(x=>x.id===el.dataset.id); const t=el.querySelector('.remain');
-    el.classList.remove('active','warn','danger');
-    const endAtEl=el.querySelector('.endAt'); if(endAtEl) endAtEl.textContent=s.end?`～ ${formatClock(s.end)}`:'';
-    if(!s.end){ t.textContent=s.finished?'終了':'空'; return; }
-    const r=s.end-Date.now(); if(r<=0){ s.end=null; s.finished=true; save(); t.textContent='終了'; return; }
-    t.textContent=formatRemain(r); el.classList.add('active');
-    if(r<=3*60*1000) el.classList.add('danger'); else if(r<=10*60*1000) el.classList.add('warn');
-  });
-  if(staff.length) renderRoster();
-}
-function formatRemain(ms){const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;return (h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0');}
-function formatClock(ts){let ms=null;if(ts==null)return'';if(typeof ts==='number')ms=ts;else if(typeof ts==='string'&&/^\d+$/.test(ts))ms=Number(ts);else if(typeof ts==='object'&&typeof ts.toMillis==='function')ms=ts.toMillis();else if(typeof ts==='object'&&typeof ts.seconds==='number')ms=ts.seconds*1000+Math.floor((ts.nanoseconds||0)/1e6);const d=new Date(ms);if(Number.isNaN(d.getTime()))return'';return d.toLocaleTimeString('ja-JP',{hour12:false,hour:'2-digit',minute:'2-digit'});}
-
-/* ================= モーダル（卓編集） ================= */
-function openModal(id){
-  lastFocus=document.activeElement; const s=seats.find(x=>x.id===id); currentId=id;
-  const nameByGroup={red:'VIP',blue:'ノーマル',vip:'超VIP'}; const num=(s.id.match(/\d+/)||[''])[0];
-  title.textContent=`席を編集：${nameByGroup[s.group]||s.label} ${num}`;
-  castI.value=s.cast||''; boyI.value=s.boy||''; manI.value='';
-  pageRoots.forEach(el=>el.setAttribute('inert','')); 
-  wrap.removeAttribute('aria-hidden'); wrap.hidden=false; wrap.style.display='grid';
-  fillSuggestionBlocks(); requestAnimationFrame(()=>castI.focus());
-}
-function closeModal(){
-  const fallback=document.getElementById('q')||document.body;
-  if(wrap.contains(document.activeElement)){ (lastFocus && document.contains(lastFocus)?lastFocus:fallback).focus(); }
-  pageRoots.forEach(el=>el.removeAttribute('inert'));
-  wrap.setAttribute('aria-hidden','true'); wrap.hidden=true; wrap.style.display='none';
-}
-document.getElementById('close').addEventListener('click', closeModal);
-wrap.addEventListener('click', e=>{ if(e.target===wrap) closeModal(); });
-
-document.getElementById('saveMeta').addEventListener('click', ()=>{
-  const s=seats.find(x=>x.id===currentId); s.cast=castI.value.trim(); s.boy=boyI.value.trim(); save(); if(window.syncSeat) window.syncSeat(s); render(); closeModal();
-});
-document.getElementById('clear').addEventListener('click', ()=>{
-  const s=seats.find(x=>x.id===currentId); s.end=null; s.cast=''; s.boy=''; s.finished=false; s.extendCount=0; save(); if(window.syncSeat) window.syncSeat(s); render(); castI.value=''; boyI.value=''; manI.value=''; closeModal();
-});
-document.getElementById('start').addEventListener('click', ()=>{
-  const v=Number(manI.value); if(!v||v<=0) return alert('分数を入力してください');
-  const s=seats.find(x=>x.id===currentId); s.cast=castI.value.trim(); s.boy=boyI.value.trim(); s.end=Date.now()+v*60*1000; s.finished=false; s.extendCount=0; save(); if(window.syncSeat) window.syncSeat(s); render(); closeModal();
-});
-document.querySelectorAll('button.quick').forEach(b=>b.addEventListener('click', ()=>{
-  const mins=Number(b.dataset.min); const s=seats.find(x=>x.id===currentId);
-  s.cast=castI.value.trim(); s.boy=boyI.value.trim(); s.end=Date.now()+mins*60*1000; s.finished=false; s.extendCount=0; save(); if(window.syncSeat) window.syncSeat(s); render(); closeModal();
-}));
-document.querySelectorAll('button.extend').forEach(b=>b.addEventListener('click', ()=>{
-  const mins=Number(b.dataset.min); const s=seats.find(x=>x.id===currentId);
-  const base=s.end && s.end>Date.now()? s.end:Date.now(); s.end=base+mins*60*1000; s.finished=false; s.extendCount = (s.extendCount||0) + 1;   
-  if(!s.cast) s.cast=castI.value.trim(); if(!s.boy) s.boy=boyI.value.trim();
-  save(); if(window.syncSeat) window.syncSeat(s); render(); closeModal();
-}));
-document.getElementById('q').addEventListener('input', render);
-
-/* ================= CSVパース/控室 ================= */
-function parseCSV(str){const rows=[];let cur=[],val='',inQ=false;for(let i=0;i<str.length;i++){const c=str[i];if(inQ){if(c=='"'){if(str[i+1]=='"'){val+='"';i++;}else inQ=false;}else val+=c;}else{if(c=='"'){inQ=true;}else if(c==','){cur.push(val);val='';}else if(c=='\n'){cur.push(val);rows.push(cur);cur=[];val='';}else if(c=='\r'){}else val+=c;}} if(val.length>0||cur.length>0){cur.push(val);rows.push(cur);} return rows;}
-function parseStaffNamesFromCSV(csv){
-  const rowsRaw=parseCSV(csv); const rows=rowsRaw.filter(r=>r&&r.some(c=>(c||'').trim()!==''));
-  if(!rows.length) return [];
-  let headerRowIdx=-1,nameIdx=-1; const MAX_SCAN=Math.min(rows.length,10);
-  for(let i=0;i<MAX_SCAN;i++){const idx=rows[i].findIndex(c=>String(c||'').trim()==='従業員'); if(idx>=0){headerRowIdx=i;nameIdx=idx;break;}}
-  if(headerRowIdx<0) headerRowIdx=0; if(nameIdx<0) nameIdx=12;
-  const names=rows.slice(headerRowIdx+1).map(r=>(r[nameIdx]||'').trim()).filter(v=>v&&v!=='従業員'); return [...new Set(names)];
-}
-async function loadStaff(){
-  if(!STAFF_CSV_URL) return;
-  try{
-    const res=await fetch(STAFF_CSV_URL,{cache:'no-store'});
-    const csv=await res.text(); const names=parseStaffNamesFromCSV(csv);
-    const newStaff=names.map(n=>({name:n,duty:!!(window.dutyMap?.[n])}));
-    staff.splice(0,staff.length,...newStaff); window.staff=staff;
-    localStorage.setItem('staff.cache.names',JSON.stringify(names));
-    fillDatalists(); renderRoster(); renderSalesFields();
-    console.log(`[Roster] CSV読込: ${names.length}件`);
-  }catch(e){
-    console.error('スタッフ読み込み失敗',e);
-    const cache=JSON.parse(localStorage.getItem('staff.cache.names')||'[]');
-    staff=cache.map(n=>({name:n,duty:!!dutyMap[n]}));
-    fillDatalists(); renderRoster(); renderSalesFields();
-  }
-}
-function toggleDuty(name){
-  dutyMap[name]=!dutyMap[name]; localStorage.setItem('staff.duty.map',JSON.stringify(dutyMap));
-  staff.forEach(s=>{ if(s.name===name) s.duty=!!dutyMap[name]; }); fillDatalists(); renderRoster();
-  if(window.syncDuty) window.syncDuty(name,dutyMap[name]);
-}
-function isNameBusy(name){
-  name=name.trim();
-  return seats.some(s=>{
-    const castNames=(s.cast||'').split(',').map(x=>x.trim()).filter(Boolean);
-    if(castNames.includes(name) || (s.boy||'').trim()===name){ return !!(s.end || s.finished); }
-    return false;
-  });
-}
-function addCastName(name){
-  const list=castI.value.split(',').map(v=>v.trim()).filter(Boolean);
-  if(!list.includes(name)){ list.push(name); castI.value=list.join(', '); }
-}
-function renderRoster(){
-  const rosterBox=document.getElementById('roster'); if(!rosterBox) return;
-  rosterBox.innerHTML='';
-  if(!staff.length){
-    const small=document.createElement('div'); small.style.color='#64748b'; small.style.fontSize='12px';
-    small.textContent='（CSVのURLが未設定か、スプレッドシートを「ウェブに公開（CSV）」にしていない可能性があります）';
-    rosterBox.appendChild(small); return;
-  }
-  const editSwitch=document.getElementById('editDuty');
-  const addChip=(name,duty,busy)=>{
-    const d=document.createElement('button'); d.type='button';
-    d.className=`staffChip ${duty?(busy?'busy':'on'):'off'}`; d.textContent=name;
-    if(editSwitch && editSwitch.checked){ d.disabled=false; d.addEventListener('click',()=>toggleDuty(name)); }
-    else{
-      if(!duty) d.disabled=true;
-      else d.addEventListener('click',()=>{
-        if(wrap.getAttribute('aria-hidden')==='false'){
-          if(document.activeElement===boyI){ boyI.value=name; boyI.focus(); }
-          else{ addCastName(name); castI.focus(); }
-        }
+  /* === 席データ === */
+  const seats = (()=>{ 
+    const saved=localStorage.getItem(LS_PREFIX+'seats.v2');
+    if(saved){
+      const arr=JSON.parse(saved);
+      arr.forEach(s=>{
+        if(s.finished===undefined) s.finished=false;
+        if(s.extendCount===undefined) s.extendCount=0;
       });
+      return arr;
     }
-    rosterBox.appendChild(d);
-  };
-  staff.filter(s=>s.duty).forEach(s=>addChip(s.name,true,isNameBusy(s.name)));
-  const off=staff.filter(s=>!s.duty);
-  if(off.length){
-    const title=document.createElement('div'); title.className='staffSectionTitle'; title.textContent='— 非出勤 —'; rosterBox.appendChild(title);
-    off.forEach(s=>addChip(s.name,false,false));
+    const a=[];
+    for(let i=1;i<=8;i++) a.push({id:`R${i}`,group:'red',label:`VIP ${i}`,cast:'',boy:'',end:null,finished:false,extendCount:0});
+    for(let i=1;i<=7;i++) a.push({id:`B${i}`,group:'blue',label:`ノーマル ${i}`,cast:'',boy:'',end:null,finished:false,extendCount:0});
+    for(let i=1;i<=3;i++) a.push({id:`V${i}`,group:'vip',label:`超VIP ${i}`,cast:'',boy:'',end:null,finished:false,extendCount:0});
+    return a;
+  })();
+
+  const save = () => localStorage.setItem(LS_PREFIX+'seats.v2', JSON.stringify(seats));
+
+  /* === 座標 / 要素参照 / UI生成群（元コードそのまま）=== */
+  const POS={R8:{top:15,left:25,width:13},R7:{top:15,left:39,width:13},R6:{top:15,left:53,width:13},R5:{top:15,left:67,width:13},
+    R1:{top:30,left:67,width:13},R2:{top:45,left:67,width:13},R3:{top:30,left:18,width:13},R4:{top:45,left:18,width:13},
+    B1:{top:22,left:87,width:10},B2:{top:36,left:87,width:10},B3:{top:50,left:87,width:10},B4:{top:7,left:2,width:10},B5:{top:7,left:12,width:10},B6:{top:65,left:7,width:11},B7:{top:65,left:84,width:11}};
+
+  const $=s=>document.querySelector(s);
+  const floor=$('#floor'), vipWrap=$('#vip'), nowEl=$('#now');
+  const wrap=$('#modalWrap'), title=$('#modalTitle');
+  const castI=$('#cast'), boyI=$('#boy'), manI=$('#manual');
+  const suggCast=$('#suggCast'), suggBoy=$('#suggBoy');
+  let currentId=null, lastFocus=null;
+  const pageRoots=document.querySelectorAll('header, main');
+
+  function cardHTML(s){
+    const nameByGroup={red:'VIP',blue:'ノーマル',vip:'超VIP'};
+    const num=(s.id.match(/\d+/)||[''])[0];
+    const label=`${nameByGroup[s.group]||s.label} ${num}`;
+    const endAt=s.end?`～ ${formatClock(s.end)}`:'';
+    const ext = (s.extendCount||0)>0 ? `<span class="extBadge">延×${s.extendCount}</span>` : '';
+    return `
+      <div class="line1">
+        <span>${label}</span>
+        <span class="endAt">${endAt}</span>
+      </div>
+      <div class="timer"><span class="remain">${
+        s.end ? formatRemain(s.end-Date.now()) : (s.finished ? '終了' : '空')
+      }</span>${ext}</div>
+      <div class="meta">${(s.cast||'')}${s.boy?' ｜ '+s.boy:''}</div>`;
+  }
+  function addVipSeat(s){
+    const d=document.createElement('div');
+    d.className='vipSeat';
+    d.dataset.id=s.id;
+    d.innerHTML=cardHTML(s);
+    d.addEventListener('click',()=>openModal(s.id));
+    vipWrap.appendChild(d);
+  }
+  function addSeatToFloor(s){
+    const pos=POS[s.id]; if(!pos) return;
+    const d=document.createElement('div');
+    d.className=`seat ${s.group}`;
+    d.dataset.id=s.id;
+    d.style.top=pos.top+'%';
+    d.style.left=pos.left+'%';
+    d.style.width=pos.width+'%';
+    d.innerHTML=cardHTML(s);
+    d.addEventListener('click',()=>openModal(s.id));
+    floor.appendChild(d);
+  }
+  function resizeFloor(){
+    const pad=12;
+    const needed=vipWrap.offsetTop+vipWrap.offsetHeight+pad;
+    floor.style.height=needed+'px';
+  }
+
+  // === Firestoreから座席状態を購読して seats[] に反映 ===
+onSnapshot(seatsCol, (qs)=>{
+  const byId = new Map(seats.map(x => [x.id, x]));  // 既存配列をベースに上書き
+  qs.forEach(docSnap=>{
+    const d = docSnap.data() || {};
+    const target = byId.get(docSnap.id);
+    if (target){
+      target.cast = d.cast || '';
+      target.boy  = d.boy  || '';
+      target.end  = (typeof d.end === 'number' || d.end === null) ? d.end : null;
+      target.finished    = !!d.finished;
+      target.extendCount = Number(d.extendCount||0);
+    }
+  });
+  save();     // ローカル保持（復帰用）
+  render();   // UI更新
+});
+
+  function render(){
+    floor.querySelectorAll('.seat').forEach(n=>n.remove());
+    vipWrap.innerHTML='';
+    const q=$('#q').value.trim();
+
+    seats.forEach(s=>{ if(s.group==='vip') addVipSeat(s); else addSeatToFloor(s); });
+
+    floor.querySelectorAll('[data-id]').forEach(el=>{
+      const s=seats.find(x=>x.id===el.dataset.id); const t=el.querySelector('.remain');
+      el.classList.remove('active','warn','danger','highlight');
+      if(s.end){
+        const r=s.end-Date.now();
+        if(r>0){ t.textContent=formatRemain(r); el.classList.add('active'); if(r<=3*60*1000)el.classList.add('danger'); else if(r<=10*60*1000)el.classList.add('warn'); }
+        else { s.end=null; s.finished=true; save(); t.textContent='終了'; }
+      }else{ t.textContent=s.finished?'終了':'空'; }
+      if(q && s.cast && s.cast.includes(q)) el.classList.add('highlight');
+    });
+    resizeFloor(); renderRoster();
+  }
+
+  function tick(){
+    nowEl.textContent=new Date().toLocaleString('ja-JP',{hour12:false});
+    floor.querySelectorAll('[data-id]').forEach(el=>{
+      const s=seats.find(x=>x.id===el.dataset.id); const t=el.querySelector('.remain');
+      el.classList.remove('active','warn','danger');
+      const endAtEl=el.querySelector('.endAt'); if(endAtEl) endAtEl.textContent=s.end?`～ ${formatClock(s.end)}`:'';
+      if(!s.end){ t.textContent=s.finished?'終了':'空'; return; }
+      const r=s.end-Date.now(); if(r<=0){ s.end=null; s.finished=true; save(); t.textContent='終了'; return; }
+      t.textContent=formatRemain(r); el.classList.add('active');
+      if(r<=3*60*1000) el.classList.add('danger'); else if(r<=10*60*1000) el.classList.add('warn');
+    });
+    if(staff.length) renderRoster();
+  }
+
+  function formatRemain(ms){const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;return (h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0');}
+  function formatClock(ts){let ms=null;if(ts==null)return'';if(typeof ts==='number')ms=ts;else if(typeof ts==='string'&&/^\d+$/.test(ts))ms=Number(ts);else if(typeof ts==='object'&&typeof ts.toMillis==='function')ms=ts.toMillis();else if(typeof ts==='object'&&typeof ts.seconds==='number')ms=ts.seconds*1000+Math.floor((ts.nanoseconds||0)/1e6);const d=new Date(ms);if(Number.isNaN(d.getTime()))return'';return d.toLocaleTimeString('ja-JP',{hour12:false,hour:'2-digit',minute:'2-digit'});}
+
+  /* === モーダル === */
+  function openModal(id){
+    lastFocus=document.activeElement; const s=seats.find(x=>x.id===id); currentId=id;
+    const nameByGroup={red:'VIP',blue:'ノーマル',vip:'超VIP'}; const num=(s.id.match(/\d+/)||[''])[0];
+    title.textContent=`席を編集：${nameByGroup[s.group]||s.label} ${num}`;
+    castI.value=s.cast||''; boyI.value=s.boy||''; manI.value='';
+    pageRoots.forEach(el=>el.setAttribute('inert',''));
+    wrap.removeAttribute('aria-hidden'); wrap.hidden=false; wrap.style.display='grid';
+    fillSuggestionBlocks(); requestAnimationFrame(()=>castI.focus());
+  }
+  function closeModal(){
+    const fallback=document.getElementById('q')||document.body;
+    if(wrap.contains(document.activeElement)){ (lastFocus && document.contains(lastFocus)?lastFocus:fallback).focus(); }
+    pageRoots.forEach(el=>el.removeAttribute('inert'));
+    wrap.setAttribute('aria-hidden','true'); wrap.hidden=true; wrap.style.display='none';
+  }
+  document.addEventListener('click',e=>{ if(e.target?.id==='close' || e.target===wrap) closeModal(); });
+
+  document.getElementById('saveMeta').addEventListener('click', ()=>{
+    const s=seats.find(x=>x.id===currentId); s.cast=castI.value.trim(); s.boy=boyI.value.trim(); save(); render(); closeModal();
+  });
+
+// 開始（手入力）
+document.getElementById('start').addEventListener('click', async ()=>{
+  const v=Number(manI.value); if(!v||v<=0) return alert('分数を入力してください');
+  const s=seats.find(x=>x.id===currentId);
+  s.cast=castI.value.trim(); s.boy=boyI.value.trim();
+  s.end=Date.now()+v*60*1000; s.finished=false; s.extendCount=0;
+  save(); render();
+  await pushSeatToFS(s);   // ← await OK
+  closeModal();
+});
+
+// クイック開始
+document.querySelectorAll('button.quick').forEach(b=>b.addEventListener('click', async ()=>{
+  const mins=Number(b.dataset.min); const s=seats.find(x=>x.id===currentId);
+  s.cast=castI.value.trim(); s.boy=boyI.value.trim();
+  s.end=Date.now()+mins*60*1000; s.finished=false; s.extendCount=0;
+  save(); render();
+  await pushSeatToFS(s);   // ← await OK
+  closeModal();
+}));
+
+// 延長
+document.querySelectorAll('button.extend').forEach(b=>b.addEventListener('click', async ()=>{
+  const mins=Number(b.dataset.min); const s=seats.find(x=>x.id===currentId);
+  const base=s.end && s.end>Date.now()? s.end:Date.now();
+  s.end=base+mins*60*1000; s.finished=false;
+  s.extendCount=(s.extendCount||0)+1;
+  if(!s.cast) s.cast=castI.value.trim(); if(!s.boy) s.boy=boyI.value.trim();
+  save(); render();
+  await pushSeatToFS(s);   // ← await OK
+  closeModal();
+}));
+
+// クリア
+document.getElementById('seatClear')?.addEventListener('click', async ()=>{
+  if (!currentId) return;
+  const s = seats.find(x => x.id === currentId);
+  if (!s) return;
+
+  // この席だけを空席に
+  s.end = null;
+  s.cast = '';
+  s.boy  = '';
+  s.finished = false;
+  s.extendCount = 0;
+
+  // ローカルとFirestoreもこの席だけ更新
+  save();
+  render();
+  await pushSeatToFS(s);
+  closeModal();
+});
+
+/* ====== 席モーダル：売上タブ ====== */
+const SALES_GAS_URL = 'https://script.google.com/macros/s/AKfycbwP_n70AlN5TrYvpVRR_tdaOJ8umm61B7bW_s-RQZ1cCeGBkIai3RlgLrbWK7ztPn5Z/exec';
+const yen = n => new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY'}).format(Number(n||0));
+
+const tabTimer = document.getElementById('tabTimer');
+const tabSales = document.getElementById('tabSales');
+const seatSalesEl = document.getElementById('seatSales');
+const prodGrid = document.getElementById('prodGrid');
+const prodSearch = document.getElementById('prodSearch');
+const seatSalesList = document.getElementById('seatSalesList');
+const seatSalesTotal = document.getElementById('seatSalesTotal');
+const seatSalesSend = document.getElementById('seatSalesSend');
+const seatSalesBack = document.getElementById('seatSalesBack');
+
+let PRODUCTS_ON = []; // Firestore products（active!==false）
+const pdColForTimer = collection(db,'rooms',ROOM_ID,'products');
+onSnapshot(pdColForTimer,(qs)=>{
+  const rows=[]; qs.forEach(d=>rows.push({id:d.id,...(d.data()||{})}));
+  PRODUCTS_ON = rows.filter(p=>p.active!==false).map(p=>({name:p.name, price:Number(p.price||0)}))
+                    .sort((a,b)=> String(a.name).localeCompare(String(b.name),'ja'));
+  buildProdGrid();
+});
+
+function buildProdGrid(q=''){
+  const list = PRODUCTS_ON.filter(p => !q || p.name.includes(q));
+  prodGrid.innerHTML = list.map(p => `
+    <button type="button" class="prodChip" data-name="${esc(p.name)}" data-price="${p.price}">
+      ${esc(p.name)}（${yen(p.price)}）
+    </button>
+  `).join('');
+  prodGrid.querySelectorAll('.prodChip').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      addItemToSeat(currentId, { product: btn.dataset.name, unitPrice: Number(btn.dataset.price) });
+      renderSeatSales(currentId);
+    });
+  });
+}
+prodSearch?.addEventListener('input', e => buildProdGrid((e.target.value||'').trim()));
+
+/* 1席ごとの仮売上をローカル保持 */
+/* 1席ごとの仮売上をローカル保持（席モーダルの売上タブ用） */
+const SALES_LS_PREFIX = LS_PREFIX + 'seat.sales.';
+
+function loadSeatSales(seatId){
+  try{
+    const raw = localStorage.getItem(SALES_LS_PREFIX + seatId);
+    const arr = raw ? JSON.parse(raw) : [];
+    // 正規化
+    return (Array.isArray(arr) ? arr : [])
+      .map(it => ({
+        product: String(it.product||''),
+        unitPrice: Number(it.unitPrice||0),
+        qty: Math.max(0, Number(it.qty||0))
+      }))
+      .filter(it => it.product && it.qty > 0);
+  }catch(_){
+    return [];
   }
 }
+function saveSeatSales(seatId, items){
+  const clean = (Array.isArray(items) ? items : [])
+    .map(it => ({
+      product: String(it.product||''),
+      unitPrice: Number(it.unitPrice||0),
+      qty: Math.max(0, Number(it.qty||0))
+    }))
+    .filter(it => it.product && it.qty > 0);
+  localStorage.setItem(SALES_LS_PREFIX + seatId, JSON.stringify(clean));
+}
+function clearSeatSales(seatId){
+  localStorage.removeItem(SALES_LS_PREFIX + seatId);
+}
+
+/* カート操作 */
+function addItemToSeat(seatId, {product, unitPrice, qty=1}){
+  const list = loadSeatSales(seatId);
+  const found = list.find(x => x.product === product && Number(x.unitPrice) === Number(unitPrice));
+  if (found) found.qty = Number(found.qty||0) + Number(qty||0);
+  else list.push({product, unitPrice:Number(unitPrice||0), qty:Number(qty||1)});
+  saveSeatSales(seatId, list);
+}
+function setItemQty(seatId, idx, qty){
+  const list = loadSeatSales(seatId);
+  if (idx<0 || idx>=list.length) return;
+  const v = Math.max(0, Number(qty||0));
+  if (v === 0) list.splice(idx,1);
+  else list[idx].qty = v;
+  saveSeatSales(seatId, list);
+}
+
+/* 表示 */
+function renderSeatSales(seatId){
+  const items = loadSeatSales(seatId);
+  if (!seatSalesList) return;
+
+  seatSalesList.innerHTML = items.map((it,i)=>`
+    <div class="salesItem" data-idx="${i}">
+      <div>${esc(it.product)}</div>
+      <div class="yen">${yen(it.unitPrice)}</div>
+      <div class="qtyCtrl">
+        <button type="button" class="qminus">－</button>
+        <input type="number" min="0" step="1" value="${Number(it.qty||0)}">
+        <button type="button" class="qplus">＋</button>
+      </div>
+      <div class="yen">${yen(Number(it.unitPrice||0)*Number(it.qty||0))}</div>
+    </div>
+  `).join('') || `<div style="color:#64748b;padding:8px">（まだ商品がありません）</div>`;
+
+  // 行高を測って 8 行スクロールの高さ安定化
+  const firstRow = seatSalesList.querySelector('.salesItem');
+  if (firstRow){
+    const h = Math.ceil(firstRow.getBoundingClientRect().height);
+    seatSalesList.style.setProperty('--rowH', h + 'px');
+  }
+
+  seatSalesList.querySelectorAll('.salesItem').forEach(row=>{
+    const idx = Number(row.dataset.idx||0);
+    const input = row.querySelector('input');
+    row.querySelector('.qminus')?.addEventListener('click',()=>{
+      const v = Math.max(0, Number(input.value||0)-1);
+      input.value = v; setItemQty(seatId, idx, v); renderSeatSales(seatId); updateSeatSalesTotal(seatId);
+    });
+    row.querySelector('.qplus')?.addEventListener('click',()=>{
+      const v = Number(input.value||0)+1;
+      input.value = v; setItemQty(seatId, idx, v); renderSeatSales(seatId); updateSeatSalesTotal(seatId);
+    });
+    input?.addEventListener('input',()=>{
+      const v = Math.max(0, Number(input.value||0));
+      setItemQty(seatId, idx, v); updateSeatSalesTotal(seatId);
+    });
+  });
+
+  updateSeatSalesTotal(seatId);
+}
+function updateSeatSalesTotal(seatId){
+  const items = loadSeatSales(seatId);
+  const total = items.reduce((a,b)=> a + Number(b.unitPrice||0)*Number(b.qty||0), 0);
+  if (seatSalesTotal) seatSalesTotal.textContent = yen(total);
+}
+
+/* タブ切替（タイマー ↔ 売上） */
+tabSales?.addEventListener('click', ()=>{
+  tabSales.classList.add('active');
+  tabTimer.classList.remove('active');
+  seatSalesEl.classList.add('show');
+  renderSeatSales(currentId);
+});
+tabTimer?.addEventListener('click', ()=>{
+  tabTimer.classList.add('active');
+  tabSales.classList.remove('active');
+  seatSalesEl.classList.remove('show');
+});
+seatSalesBack?.addEventListener('click', ()=> tabTimer.click());
+
+/* 売上 登録（Firestore: rooms/{ROOM_ID}/sales） */
+seatSalesSend?.addEventListener('click', async ()=>{
+  if (!currentId) return;
+  const cart = loadSeatSales(currentId);
+  if (!cart.length){ alert('商品がありません'); return; }
+
+  // 入力中のメタ（席モーダルのフォームから取得）
+  const seat = seats.find(x => x.id === currentId) || {};
+  const seatLabel = (seat.label || '');
+  const boy  = (boyI?.value || '').trim();
+  const cast = (castI?.value || '').split(',').map(s=>s.trim()).filter(Boolean);
+
+  const total = cart.reduce((a,b)=> a + Number(b.unitPrice||0)*Number(b.qty||0), 0);
+
+  // Firestore 書き込み
+  try{
+    const rec = {
+      seatId: currentId,
+      seatLabel,
+      boy,
+      cast,
+      rows: cart.map(it=>({
+        product: it.product,
+        unitPrice: Number(it.unitPrice||0),
+        qty: Number(it.qty||0)
+      })),
+      total: Number(total||0),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    await addDoc(collection(db,'rooms',ROOM_ID,'sales'), rec);
+
+    // （任意）GAS 側にも転送したい場合はコメント解除
+    // fetch(SALES_GAS_URL, { method:'POST', mode:'no-cors', body: JSON.stringify(rec) }).catch(()=>{});
+
+    clearSeatSales(currentId);
+    renderSeatSales(currentId);
+    updateSeatSalesTotal(currentId);
+    alert('登録しました');
+    // 売上登録後はタイマーに戻してもOK
+    tabTimer.click();
+  }catch(e){
+    console.error('[sales] write failed', e);
+    alert('登録に失敗しました: ' + (e?.message || e));
+  }
+});
+
+
+  document.getElementById('q').addEventListener('input', render);
+
+  /* === CSV/名簿 === */
+  function parseCSV(str){const rows=[];let cur=[],val='',inQ=false;for(let i=0;i<str.length;i++){const c=str[i];if(inQ){if(c=='"'){if(str[i+1]=='"'){val+='"';i++;}else inQ=false;}else val+=c;}else{if(c=='"'){inQ=true;}else if(c==','){cur.push(val);val='';}else if(c=='\n'){cur.push(val);rows.push(cur);cur=[];val='';}else if(c=='\r'){}else val+=c;}} if(val.length>0||cur.length>0){cur.push(val);rows.push(cur);} return rows;}
+  function parseStaffNamesFromCSV(csv){
+    const rowsRaw=parseCSV(csv); const rows=rowsRaw.filter(r=>r&&r.some(c=>(c||'').trim()!==''));
+    if(!rows.length) return [];
+    let headerRowIdx=-1,nameIdx=-1; const MAX_SCAN=Math.min(rows.length,10);
+    for(let i=0;i<MAX_SCAN;i++){const idx=rows[i].findIndex(c=>String(c||'').trim()==='従業員'); if(idx>=0){headerRowIdx=i;nameIdx=idx;break;}}
+    if(headerRowIdx<0) headerRowIdx=0; if(nameIdx<0) nameIdx=12;
+    const names=rows.slice(headerRowIdx+1).map(r=>(r[nameIdx]||'').trim()).filter(v=>v&&v!=='従業員'); return [...new Set(names)];
+  }
+  let staff=[]; let dutyMap=JSON.parse(localStorage.getItem(LS_PREFIX+'staff.duty.map')||'{}'); window.staff=staff; window.dutyMap=dutyMap;
+
+  // staff コレクション購読（控室の名簿はここから作る）
+
+const stColForRoster = collection(db, 'rooms', ROOM_ID, 'staff');
+
+onSnapshot(stColForRoster, (qs)=>{
+  const next = [];
+
+  qs.forEach(docSnap=>{
+    const d = docSnap.data() || {};
+    // active=false は表示しない（既定は true 扱い）
+    if (d.active === false) return;
+
+    const name = (d.name || docSnap.id || '').trim();
+    if (!name) return;
+
+    const role = d.role || 'cast';
+    // 解雇は現場UIから除外（控室・ピッカー等に出さない）
+    if (role === 'fired') return;
+    // staffドキュメントの duty は boolean想定（省略可）
+    // 役職ごとに {cast,boy} へマップ（cast: true/false, boy: true/false）
+    const dutyBool = !!d.duty;
+    const fallbackDuty =
+      role === 'boy'  ? { cast:false, boy:dutyBool }
+    : role === 'cast' ? { cast:dutyBool, boy:false }
+                      : { cast:false,   boy:false };
+
+    // dutyCol の最新があればそれを優先
+    const dutyObj = dutyMap[name] ?? fallbackDuty;
+
+    next.push({ name, role, duty: dutyObj });
+  });
+
+  // 表示用に名前順
+  next.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||''), 'ja'));
+
+  // staff[] を差し替え
+  staff.splice(0, staff.length, ...next);
+  window.staff = staff;
+
+  // 既存UIを更新
+  fillDatalists();
+  renderRoster();
+  if (typeof window.renderSalesFields === 'function') window.renderSalesFields();
+});
+
+
+  // === Firestoreから出勤フラグ(duty)を購読 ===
+  let salesUIReady = false;
+onSnapshot(dutyCol, (qs)=>{
+  const next = {};
+  qs.forEach(docSnap=>{
+    const d = docSnap.data() || {};
+    const dutyObj =
+      (typeof d.duty === 'object' && d.duty)
+        ? { cast: !!d.duty.cast, boy: !!d.duty.boy }
+        : (typeof d.duty === 'boolean'
+            ? { cast: d.duty, boy: d.duty }   // 後方互換：boolean は両方ON扱い（運用に合わせて調整OK）
+            : { cast:false, boy:false });
+    next[docSnap.id] = dutyObj;
+  });
+  dutyMap = next;
+  localStorage.setItem(LS_PREFIX+'staff.duty.map', JSON.stringify(dutyMap));
+  staff.forEach(s => { s.duty = dutyMap[s.name] || {cast:false,boy:false}; });
+  fillDatalists(); renderRoster();
+  if (salesUIReady && typeof window.renderSalesFields === 'function') window.renderSalesFields();
+});
+
+async function toggleDuty(name){
+  const next = !dutyMap[name];
+  dutyMap[name] = next;
+  localStorage.setItem(LS_PREFIX+'staff.duty.map', JSON.stringify(dutyMap)); // 一応ローカルも更新
+  // 画面先行更新
+  staff.forEach(s=>{ if(s.name===name) s.duty=next; });
+  fillDatalists(); renderRoster();
+
+  try{
+    await setDoc(
+      doc(dutyCol, name.replace(/\//g,'／')),
+      { duty: next, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+  }catch(e){
+    console.error('[duty] write failed', e);
+  }
+}
+
+  async function toggleDutyRole(name, role /* 'cast' | 'boy' */){
+  const cur = dutyMap[name] || {cast:false,boy:false};
+  const next = { ...cur, [role]: !cur[role] };
+  dutyMap[name] = next;
+  localStorage.setItem(LS_PREFIX+'staff.duty.map', JSON.stringify(dutyMap));
+  staff.forEach(s=>{ if(s.name===name) s.duty = next; });
+  fillDatalists(); renderRoster();
+  try{
+    await setDoc(
+      doc(dutyCol, name.replace(/\//g,'／')),
+      { duty: next, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+  }catch(e){ console.error('[duty] write failed', e); }
+}
+
+  function isNameBusy(name){
+    name=name.trim();
+    return seats.some(s=>{
+      const castNames=(s.cast||'').split(',').map(x=>x.trim()).filter(Boolean);
+      if(castNames.includes(name) || (s.boy||'').trim()===name){ return !!(s.end || s.finished); }
+      return false;
+    });
+  }
+  function addCastName(name){
+    const list=castI.value.split(',').map(v=>v.trim()).filter(Boolean);
+    if(!list.includes(name)){ list.push(name); castI.value=list.join(', '); }
+  }
+
+
+  // Roster（本鯖式）
+function renderRoster(){
+  const boxCast = document.getElementById('rosterCast');
+  const boxBoy  = document.getElementById('rosterBoy');
+  if(!boxCast || !boxBoy) return;
+
+  boxCast.innerHTML = '';
+  boxBoy.innerHTML  = '';
+
+  if(!staff.length){
+    const small = document.createElement('div');
+    small.style.color = '#64748b';
+    small.style.fontSize = '12px';
+    small.textContent = '（従業員が未登録です。幹部→従業員管理から追加してください）';
+    boxCast.appendChild(small.cloneNode(true));
+    boxBoy.appendChild(small);
+    return;
+  }
+
+  const isEditCast = !!document.getElementById('editDutyCast')?.checked;
+  const isEditBoy  = !!document.getElementById('editDutyBoy')?.checked;
+  const qCast = (document.getElementById('searchCast')?.value || '').trim();
+  const qBoy  = (document.getElementById('searchBoy') ?.value || '').trim();
+
+  const addChip = (root, name, {on, busy, role, isEdit})=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `staffChip ${on ? (busy ? 'busy' : 'on') : 'off'}`;
+    b.textContent = name;
+
+    if(isEdit){
+      // 出勤編集：列に応じた duty をトグル
+      b.disabled = false;
+      b.addEventListener('click', ()=>toggleDutyRole(name, role));
+    }else{
+      // 通常：席モーダル割当（モーダルが開いてる時のみ）
+      if(!on){ b.disabled = true; }
+      else{
+        b.addEventListener('click', ()=>{
+          const open = (document.getElementById('modalWrap')?.getAttribute('aria-hidden') === 'false');
+          if(!open) return;
+          if(role === 'boy'){ boyI.value = name; boyI.focus(); }
+          else{
+            const list = castI.value.split(',').map(v=>v.trim()).filter(Boolean);
+            if(!list.includes(name)) castI.value = [...list, name].join(', ');
+            castI.focus();
+          }
+        });
+      }
+    }
+    root.appendChild(b);
+  };
+
+  // 検索関数
+  const byQuery = (q) => (s) => !q || s.name.includes(q);
+
+  // 左カラム（キャスト）
+  const onCast  = staff.filter(s => s.duty?.cast === true).filter(byQuery(qCast));
+  const offCast = isEditCast ? staff.filter(s => s.duty?.cast !== true).filter(byQuery(qCast)) : [];
+
+  onCast.forEach(s => addChip(boxCast, s.name, {on:true, busy:isNameBusy(s.name), role:'cast', isEdit:isEditCast}));
+  if(offCast.length){
+    const t = document.createElement('div'); t.className='staffSectionTitle'; t.textContent='— 非出勤 —';
+    boxCast.appendChild(t);
+    offCast.forEach(s => addChip(boxCast, s.name, {on:false, busy:false, role:'cast', isEdit:isEditCast}));
+  }
+
+  // 右カラム（ボーイ/スタッフ）
+  const onBoy  = staff.filter(s => s.duty?.boy === true).filter(byQuery(qBoy));
+  const offBoy = isEditBoy ? staff.filter(s => s.duty?.boy !== true).filter(byQuery(qBoy)) : [];
+
+  onBoy.forEach(s => addChip(boxBoy, s.name, {on:true, busy:isNameBusy(s.name), role:'boy', isEdit:isEditBoy}));
+  if(offBoy.length){
+    const t = document.createElement('div'); t.className='staffSectionTitle'; t.textContent='— 非出勤 —';
+    boxBoy.appendChild(t);
+    offBoy.forEach(s => addChip(boxBoy, s.name, {on:false, busy:false, role:'boy', isEdit:isEditBoy}));
+  }
+}
+
 function fillDatalists(){
   const castDL=document.getElementById('castList');
-  const boyDL=document.getElementById('boyList');
-  const onList=staff.filter(s=>s.duty).map(s=>s.name);
-  castDL.innerHTML=onList.map(n=>`<option value="${n}">`).join('');
-  boyDL.innerHTML =onList.map(n=>`<option value="${n}">`).join('');
+  const boyDL =document.getElementById('boyList');
+  const castOn=(staff||[]).filter(s=>s.duty?.cast).map(s=>s.name);
+  const boyOn =(staff||[]).filter(s=>s.duty?.boy ).map(s=>s.name);
+  castDL.innerHTML=castOn.map(n=>`<option value="${n}">`).join('');
+  boyDL .innerHTML=boyOn .map(n=>`<option value="${n}">`).join('');
 }
 function fillSuggestionBlocks(){
-  const onList=staff.filter(s=>s.duty).map(s=>s.name);
-  suggCast.innerHTML=onList.map(n=>`<button type="button" class="staffChip on" data-name="${n}">${n}</button>`).join('');
-  suggCast.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
-    const name=b.dataset.name; const list=castI.value.split(',').map(v=>v.trim()).filter(Boolean);
-    if(!list.includes(name)) list.push(name); castI.value=list.join(', '); castI.focus();
-  }));
-  suggBoy.innerHTML=onList.map(n=>`<button type="button" class="staffChip on" data-name="${n}">${n}</button>`).join('');
-  suggBoy.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ boyI.value=b.dataset.name; boyI.focus(); }));
-}
+  const castOn=(staff||[]).filter(s=>s.duty?.cast).map(s=>s.name);
+  const boyOn =(staff||[]).filter(s=>s.duty?.boy ).map(s=>s.name);
 
-/* ==================== 売上：ピッカー（NEW） ==================== */
-const boyField  = document.getElementById('boyField');
-const castField = document.getElementById('castField');
-const pickerWrap   = document.getElementById('pickerWrap');
-const pickerTitle  = document.getElementById('pickerTitle');
-const pickerList   = document.getElementById('pickerList');
-const pickerOk     = document.getElementById('pickerOk');
-const pickerClear  = document.getElementById('pickerClear');
-const pickerClose  = document.getElementById('pickerClose');
-
-let salesBoy = '';      // 単一
-let salesCast = [];     // 複数
-let pickerMode = null;  // 'boy' | 'cast'
-let tmpBoy = '';
-let tmpCast = [];
-
-function renderSalesFields(){
-  // Boy field
-  boyField.classList.toggle('empty', !salesBoy);
-  boyField.innerHTML = salesBoy ? `<span class="pill">${salesBoy}</span>` : 'タップして選択';
-
-  // Cast field
-  castField.classList.toggle('empty', salesCast.length===0);
-  castField.innerHTML = salesCast.length
-    ? salesCast.map(n=>`<span class="pill">${n}</span>`).join('')
-    : 'タップして選択';
-}
-window.renderSalesFields = renderSalesFields;
-// 互換（Firebaseの購読で呼ばれてもOK）
-window.renderSalesStaffPickers = renderSalesFields;
-
-boyField.addEventListener('click', ()=>openPicker('boy'));
-castField.addEventListener('click', ()=>openPicker('cast'));
-
-function openPicker(mode){
-  pickerMode = mode;
-  pickerTitle.textContent = (mode==='boy') ? 'ボーイを選択（1名）' : 'キャストを選択（複数可）';
-  tmpBoy  = salesBoy;
-  tmpCast = [...salesCast];
-
-  buildPickerList();
-  pickerWrap.style.display='grid';
-  pickerWrap.removeAttribute('aria-hidden');
-}
-function closePicker(){
-  pickerWrap.style.display='none';
-  pickerWrap.setAttribute('aria-hidden','true');
-}
-pickerWrap.addEventListener('click', e=>{ if(e.target===pickerWrap) closePicker(); });
-pickerClose.addEventListener('click', closePicker);
-pickerClear.addEventListener('click', ()=>{
-  if(pickerMode==='boy') tmpBoy='';
-  else tmpCast=[];
-  buildPickerList();
-});
-pickerOk.addEventListener('click', ()=>{
-  if(pickerMode==='boy') salesBoy = tmpBoy;
-  else salesCast = [...tmpCast];
-  renderSalesFields();
-  closePicker();
-});
-
-function buildPickerList(){
-  const onList=(window.staff||[]).filter(s=>s.duty).map(s=>({name:s.name, busy:isNameBusy(s.name)}));
-  pickerList.innerHTML = onList.map(x=>{
-    const selected = (pickerMode==='boy') ? (tmpBoy===x.name) : tmpCast.includes(x.name);
-    return `<button type="button" class="staffChip ${x.busy?'busy':'on'} ${selected?'selected':''}" data-name="${x.name}">${x.name}</button>`;
-  }).join('');
-  pickerList.querySelectorAll('button').forEach(b=>{
-    b.addEventListener('click', ()=>{
-      const name=b.dataset.name;
-      if(pickerMode==='boy'){
-        tmpBoy = (tmpBoy===name) ? '' : name;
-      }else{
-        if(tmpCast.includes(name)) tmpCast = tmpCast.filter(n=>n!==name);
-        else tmpCast = [...tmpCast, name];
+  // キャスト（チップ描画）
+  suggCast.innerHTML = castOn
+    .map(n => `<button type="button" class="staffChip on" data-name="${n}">${n}</button>`)
+    .join('');
+  // クリック → キャスト欄へ追加（重複は入れない）
+  suggCast.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const name = btn.dataset.name || '';
+      const list = castI.value.split(',').map(v=>v.trim()).filter(Boolean);
+      if (!list.includes(name)) {
+        list.push(name);
+        castI.value = list.join(', ');
       }
-      buildPickerList();
+      castI.focus();
+    });
+  });
+
+  // ボーイ（チップ描画）
+  suggBoy.innerHTML = boyOn
+    .map(n => `<button type="button" class="staffChip on" data-name="${n}">${n}</button>`)
+    .join('');
+  // クリック → ボーイ欄へセット（1人だけ）
+  suggBoy.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const name = btn.dataset.name || '';
+      boyI.value = name;
+      boyI.focus();
     });
   });
 }
 
-/* ================= 初期化（共通） ================= */
-render(); setInterval(tick,1000); window.addEventListener('resize', resizeFloor);
-if(STAFF_CSV_URL) loadStaff(); setInterval(()=>{ if(STAFF_CSV_URL) loadStaff(); },60000);
-</script>
+/* === 売上ピッカー（UI側の選択だけ）=== 
+   ※ boyField / castField が無い画面（今回の構成）では何もしないようにガードする
+*/
+(() => {
+  const boyField    = document.getElementById('boyField');
+  const castField   = document.getElementById('castField');
+  const pickerWrap  = document.getElementById('pickerWrap');
+  const pickerTitle = document.getElementById('pickerTitle');
+  const pickerList  = document.getElementById('pickerList');
+  const pickerOk    = document.getElementById('pickerOk');
+  const pickerClear = document.getElementById('pickerClear');
+  const pickerClose = document.getElementById('pickerClose');
 
-<!-- Firebase 同期（そのまま） -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, getDocs, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBru7m0EGNXBgRTzsmQMZknlAAirkTwwpw",
-  authDomain: "alexandria-8d142.firebaseapp.com",
-  projectId: "alexandria-8d142",
-  storageBucket: "alexandria-8d142.firebasestorage.app",
-  messagingSenderId: "78904719003",
-  appId: "1:78904719003:web:234e7d8b0703bad614f83e",
-  measurementId: "G-6TJNLEHJXQ"
-};
-
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
-const auth= getAuth(app);
-const ROOM_ID="default";
-
-signInAnonymously(auth).catch(console.error);
-onAuthStateChanged(auth, async (u) => {
-  if(!u) return;
-  await ensureInitialSeats(); listenSeats(); listenDuty();
-});
-
-async function ensureInitialSeats(){
-  const colRef=collection(db,"rooms",ROOM_ID,"seats");
-  const snap=await getDocs(colRef);
-  if(!snap.empty) return;
-  const init=[]; for(let i=1;i<=8;i++) init.push({id:`R${i}`,label:`VIP ${i}`,group:'red',cast:'',boy:'',end:null,finished:false});
-  for(let i=1;i<=7;i++) init.push({id:`B${i}`,label:`ノーマル ${i}`,group:'blue',cast:'',boy:'',end:null,finished:false});
-  for(let i=1;i<=3;i++) init.push({id:`V${i}`,label:`超VIP ${i}`,group:'vip',cast:'',boy:'',end:null,finished:false});
-  await Promise.all(init.map(s=> setDoc(doc(db,"rooms",ROOM_ID,"seats",s.id),{...s,updatedAt:serverTimestamp()})));
-}
-function listenSeats(){
-  const colRef=collection(db,"rooms",ROOM_ID,"seats");
-  onSnapshot(colRef,(qs)=>{
-    const byId={}; qs.forEach(d=>byId[d.id]=d.data());
-    const base=Array.isArray(window.seats)?window.seats:[];
-    const ordered=base.map(s=>byId[s.id]??s);
-    if(!ordered.length) Object.keys(byId).sort().forEach(id=>ordered.push(byId[id]));
-    if(!Array.isArray(window.seats)) window.seats=[];
-    window.seats.splice(0,window.seats.length,...ordered);
-    if(typeof window.render==='function') window.render();
-  });
-}
-async function saveSeatRemote(s){
-  await setDoc(doc(db,"rooms",ROOM_ID,"seats",s.id),{...s,updatedAt:serverTimestamp()},{merge:true});
-}
-const dutyCol=collection(db,"rooms",ROOM_ID,"duty");
-function listenDuty(){
-  onSnapshot(dutyCol,(qs)=>{
-    const remote={}; qs.forEach(d=>remote[d.id]=!!(d.data()?.duty));
-    window.dutyMap={...(window.dutyMap||{}),...remote};
-    localStorage.setItem('staff.duty.map',JSON.stringify(window.dutyMap));
-    const arr=Array.isArray(window.staff)?window.staff:[];
-    for(let i=0;i<arr.length;i++){ arr[i].duty=!!window.dutyMap[arr[i].name]; }
-    window.fillDatalists && window.fillDatalists();
-    window.renderRoster && window.renderRoster();
-    window.renderSalesFields && window.renderSalesFields();
-  });
-}
-async function saveDutyRemote(name,duty){
-  const id=name.replace(/\//g,'／');
-  await setDoc(doc(dutyCol,id),{duty:!!duty,updatedAt:serverTimestamp()},{merge:true});
-}
-window.syncDuty=saveDutyRemote; window.syncSeat=saveSeatRemote;
-</script>
-
-<!-- 売上入力（商品CSV/送信） -->
-<script>
-// ★商品はスタッフと同じCSVから取る（B:商品 / C:値段）
-const PRODUCTS_CSV_URL = STAFF_CSV_URL;
-const SALES_GAS_URL    = 'https://script.google.com/macros/s/AKfycbyYQne9ogm55RsDRDFQ_DH4XLMYmOKHsRRpFf2t18fklZOyf7HDoNw_gWhFVsbdKBJL/exec';
-
-
-const linesBox=document.getElementById('salesLines');
-const totalEl=document.getElementById('salesTotal');
-let PRODUCTS=[], LINE_SEQ=0;
-
-const yen = n => new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY'}).format(Number(n||0));
-const toNum = v => Number(String(v||'').replace(/[^\d.-]/g,''))||0;
-
-function parseProductsFromCSV(csv){
-  // 既存の parseCSV が使えます
-  const rows = parseCSV(csv).filter(r => r && r.some(c => (c||'').trim() !== ''));
-  if (!rows.length) return [];
-
-  // 先頭～10行で「商品 / 値段|価格|金額」の見出しがあるか探す
-  let nameIdx = -1, priceIdx = -1, headerRow = -1;
-  for (let i = 0; i < Math.min(10, rows.length); i++){
-    const rr = rows[i];
-    const n  = rr.findIndex(c => /商品/.test(String(c||'')));
-    const p  = rr.findIndex(c => /(値段|価格|金額)/.test(String(c||'')));
-    if (n >= 0 && p >= 0){ nameIdx = n; priceIdx = p; headerRow = i; break; }
+  // 外で参照しているフラグと関数（存在しないUIなら安全にno-op）
+  if (!boyField || !castField) {
+    window.renderSalesFields = () => {};
+    // dutyスナップショット側で呼ぶ「準備OKフラグ」も false のままにする
+    // （上流で let salesUIReady = false; と宣言されている前提）
+    return; 
   }
-  // 見出しが無い場合は B/C を使う（0始まりで1/2）
-  if (nameIdx < 0) nameIdx = 1;
-  if (priceIdx < 0) priceIdx = 2;
 
-  // データ開始行（見出しが見つかったらその次の行から）
-  const dataRows = rows.slice(headerRow >= 0 ? headerRow + 1 : 0);
+  // ここから先はフィールドがある場合のみ有効化
+  let salesBoy = '';
+  let salesCast = [];
+  window.salesBoy = salesBoy;
+  window.salesCast = salesCast;
 
-  return dataRows
-    .map(r => ({ name: (r[nameIdx]||'').trim(), price: Number(String(r[priceIdx]||'').replace(/[^\d.-]/g,'')) || 0 }))
-    .filter(p => p.name);
-}
+  let pickerMode = null;
+  let tmpBoy = '';
+  let tmpCast = [];
 
-async function loadProducts(){
-  if(!PRODUCTS_CSV_URL) return;
-  const res=await fetch(PRODUCTS_CSV_URL,{cache:'no-store'});
-  const csv=await res.text(); PRODUCTS=parseProductsFromCSV(csv); rebuildAllLines();
-}
+  function renderSalesFields(){
+    // 上流の window から値を拾う（他所で変更されている可能性に対応）
+    if (typeof window.salesBoy !== 'undefined') salesBoy = window.salesBoy;
+    if (Array.isArray(window.salesCast)) salesCast = [...window.salesCast];
 
-function buildLine(init){
-  const id=++LINE_SEQ; const row=document.createElement('div'); row.className='sales-row'; row.dataset.lineId=id;
-  const sel=document.createElement('select');
-  sel.innerHTML=`<option value="">（商品を選択）</option>`+PRODUCTS.map(p=>`<option data-price="${p.price}" value="${p.name}">${p.name}</option>`).join('');
-  if(init?.product) sel.value=init.product;
+    // ピル表示
+    boyField.classList.toggle('empty', !salesBoy);
+    boyField.innerHTML = salesBoy ? `<span class="pill">${salesBoy}</span>` : 'タップして選択';
 
-  const unitEl=document.createElement('div'); unitEl.className='sales-yen'; unitEl.textContent=yen(init?.unitPrice||0);
-  const qty=document.createElement('input'); qty.type='number'; qty.min='0'; qty.step='1'; qty.value=init?.qty ?? 0;
-  const subEl=document.createElement('div'); subEl.className='sales-yen'; subEl.textContent=yen((init?.unitPrice||0)*(init?.qty||0));
-  const del=document.createElement('button'); del.type='button'; del.className='sales-pill'; del.textContent='－ 削除'; del.addEventListener('click',()=>{ row.remove(); recalcTotal(); });
+    castField.classList.toggle('empty', salesCast.length===0);
+    castField.innerHTML = salesCast.length 
+      ? salesCast.map(n=>`<span class="pill">${n}</span>`).join('')
+      : 'タップして選択';
+  }
+  window.renderSalesFields = renderSalesFields;
 
-  sel.addEventListener('change',()=>{ const price=Number(sel.selectedOptions[0]?.dataset.price||0); unitEl.textContent=yen(price); subEl.textContent=yen(price*Number(qty.value||0)); recalcTotal(); });
-  qty.addEventListener('input',()=>{ const price=Number(sel.selectedOptions[0]?.dataset.price||0); subEl.textContent=yen(price*Number(qty.value||0)); recalcTotal(); });
+  // 準備OK（dutyスナップショット側で renderSalesFields を呼べるように）
+  salesUIReady = true;
 
-  row.appendChild(sel); row.appendChild(unitEl); row.appendChild(qty); row.appendChild(subEl); row.appendChild(del);
-  linesBox.appendChild(row);
-}
-function rebuildAllLines(){ const keep=[...linesBox.querySelectorAll('.sales-row')].length || 1; linesBox.innerHTML=''; for(let i=0;i<keep;i++) buildLine(); recalcTotal(); }
-function recalcTotal(){ let sum=0; linesBox.querySelectorAll('.sales-row').forEach(row=>{ const sel=row.querySelector('select'); const unit=Number(sel.selectedOptions[0]?.dataset.price||0); const qty=Number(row.querySelector('input').value||0); sum += unit*qty; }); totalEl.textContent=yen(sum); }
+  // フィールドクリックでピッカーを開く
+  boyField.addEventListener('click', ()=>openPicker('boy'));
+  castField.addEventListener('click', ()=>openPicker('cast'));
 
-/* 送信 */
-function collectPayload(){
-  const rows=[...linesBox.querySelectorAll('.sales-row')].map(row=>{ const sel=row.querySelector('select'); const unit=Number(sel.selectedOptions[0]?.dataset.price||0); const qty=Number(row.querySelector('input').value||0); const product=sel.value||''; return {product,unitPrice:unit,qty,amount:unit*qty}; }).filter(r=>r.product && r.qty>0);
-  const cast=[...salesCast]; const boy=salesBoy||''; const total=rows.reduce((a,b)=>a+b.amount,0);
-  return { rows, cast, boy, total, timestamp: Date.now() };
-}
-document.getElementById('addSalesLine').addEventListener('click',()=>buildLine());
-document.getElementById('reloadSales').addEventListener('click',()=>{ loadProducts(); renderSalesFields(); });
-document.getElementById('submitSales').addEventListener('click', async ()=>{
-  const payload = collectPayload();
-  if(!payload.rows.length) return alert('明細がありません');
-  if(!SALES_GAS_URL) return alert('送信先URLが未設定です');
+  function openPicker(mode){
+    pickerMode = mode;
+    pickerTitle.textContent = (mode==='boy') ? 'ボーイを選択（1名）' : 'キャストを選択（複数可）';
+    tmpBoy  = salesBoy;
+    tmpCast = [...salesCast];
+    buildPickerList();
+    pickerWrap.style.display='grid';
+    pickerWrap.removeAttribute('aria-hidden');
+  }
+  function closePicker(){ pickerWrap.style.display='none'; pickerWrap.setAttribute('aria-hidden','true'); }
+  pickerWrap.addEventListener('click', e=>{ if(e.target===pickerWrap) closePicker(); });
+  pickerClose.addEventListener('click', closePicker);
+  pickerClear.addEventListener('click', ()=>{
+    if(pickerMode==='boy') tmpBoy=''; else tmpCast=[];
+    buildPickerList();
+  });
+  pickerOk.addEventListener('click', ()=>{
+    if (pickerMode==='boy') salesBoy = tmpBoy;
+    else salesCast = [...tmpCast];
+    window.salesBoy = salesBoy;
+    window.salesCast = salesCast;
+    renderSalesFields();
+    closePicker();
+  });
 
-  try{
-    const res = await fetch(SALES_GAS_URL, {
-      method:'POST',
-      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
+  function isNameBusy(name){
+    name=name.trim();
+    return seats.some(s=>{
+      const castNames=(s.cast||'').split(',').map(x=>x.trim()).filter(Boolean);
+      if(castNames.includes(name) || (s.boy||'').trim()===name){ return !!(s.end || s.finished); }
+      return false;
     });
-    // 401/500 なども拾う
-    const text = await res.text();
-    let json = {};
-    try { json = JSON.parse(text); } catch(_) {}
-    if(!res.ok || json.ok === false){
-      throw new Error(json.error || `HTTP ${res.status}`);
+  }
+
+  function buildPickerList(){
+    let onList=[];
+    if (pickerMode==='boy'){
+      onList=(window.staff||[]).filter(s=>s.duty?.boy).map(s=>({name:s.name, busy:isNameBusy(s.name)}));
+    }else{
+      onList=(window.staff||[]).filter(s=>s.duty?.cast).map(s=>({name:s.name, busy:isNameBusy(s.name)}));
     }
-
-    alert('登録しました');
-    // 送信成功 → ボーイ/キャストをリセット
-    salesBoy = ''; salesCast = []; tmpBoy = ''; tmpCast = []; renderSalesFields();
-    
-    linesBox.innerHTML=''; 
-    buildLine(); 
-    recalcTotal();
-
-  }catch(e){
-    alert('送信エラー: ' + e.message);
-    console.error(e);
+    pickerList.innerHTML = onList.map(x=>{
+      const selected = (pickerMode==='boy') ? (tmpBoy===x.name) : tmpCast.includes(x.name);
+      return `<button type="button" class="staffChip ${x.busy?'busy':'on'} ${selected?'selected':''}" data-name="${x.name}">${x.name}</button>`;
+    }).join('');
+    pickerList.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const name=b.dataset.name;
+        if(pickerMode==='boy'){ tmpBoy = (tmpBoy===name) ? '' : name; }
+        else { if(tmpCast.includes(name)) tmpCast = tmpCast.filter(n=>n!==name); else tmpCast = [...tmpCast, name]; }
+        buildPickerList();
+      });
+    });
   }
-});
+})();
 
-
-/* 初期起動 */
-loadProducts(); renderSalesFields(); buildLine();
+  /* === 初期化 === */
+  render(); setInterval(tick,1000); window.addEventListener('resize', resizeFloor);
+  
 </script>
 
-<!-- ルーター -->
+  <!-- ========= ルーター（最後に1本だけ） ========= -->
 <script>
   function route(){
-    const page=(location.hash||'#timer').replace('#','');
-    const isTimer=page==='timer';
-    document.getElementById('pageTimer').style.display=isTimer?'block':'none';
-    document.getElementById('pageSales').style.display=isTimer?'none':'block';
-    document.getElementById('navTimer').classList.toggle('active',isTimer);
-    document.getElementById('navSales').classList.toggle('active',!isTimer);
+    let hash = location.hash || '#timer';
+    // 旧URLの #sales で来た場合は #timer へ誘導
+    if (hash === '#sales') {
+      location.hash = '#timer';
+      hash = '#timer';
+    }
+    const isAdmin = hash.startsWith('#admin');
+    const isTimer = !isAdmin;  // それ以外は全部タイマー扱い
+
+    const show=(id,on)=>{const el=document.getElementById(id); if(el) el.style.display=on?'block':'none';};
+    const active=(id,on)=>{const el=document.getElementById(id); if(el) el.classList.toggle('active',!!on);};
+
+    show('pageTimer', isTimer);
+    show('pageAdmin', isAdmin);
+
+    active('navTimer', isTimer);
+    active('navAdmin', isAdmin);
+
     window.scrollTo(0,0);
   }
-  window.addEventListener('hashchange', route);
+window.addEventListener('hashchange', ()=>{
   route();
+
+  // 既存：売上日別ナビ
+  if (location.hash.startsWith('#admin-sales')) {
+    if (window.renderSalesGroupedByBizDay && window.getSalesDayFromHash && window.renderSalesIndex) {
+      const day = getSalesDayFromHash();
+      const cache = window.SALES_ROWS_CACHE || [];
+      if (day) renderSalesGroupedByBizDay(cache, day);
+      else     renderSalesIndex(cache);
+    }
+  }
+
+  // 追加：給料ページ
+  if (location.hash.startsWith('#admin-payroll')) {
+    const day = window.getPayrollDayFromHash && getPayrollDayFromHash();
+    if (day) window.renderPayrollDay && renderPayrollDay(day);
+    else     window.renderPayrollIndex && renderPayrollIndex();
+  }
+
+  // 追加：未払い者ページ
+if (location.hash.startsWith('#admin-payouts')) {
+  window.renderPayoutsPage && renderPayoutsPage();
+  fitAdminPayouts(true);
+} else {
+  fitAdminPayouts(false);
+}
+
+});
+
+route();
 </script>
 
 </body>
