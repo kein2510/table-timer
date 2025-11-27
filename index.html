@@ -1263,6 +1263,7 @@ if (location.hash.startsWith('#admin-analytics')) {
         <select class="rl" disabled>
           <option value="cast"  ${s.role==='cast' ?'selected':''}>キャスト</option>
             <option value="boy"   ${s.role==='boy'  ?'selected':''}>ボーイ</option>
+            <option value="castboy"   ${s.role==='castboy'  ?'selected':''}>キャスト,ボーイ</option>
             <option value="staff" ${s.role==='staff'?'selected':''}>スタッフ</option>
             <option value="fired" ${s.role==='fired'?'selected':''}>解雇</option>
           </select>
@@ -1347,6 +1348,7 @@ function makeAddRow(init){
     <select class="rl">
       <option value="cast"  ${init?.role==='cast' ?'selected':''}>キャスト</option>
       <option value="boy"   ${init?.role==='boy'  ?'selected':''}>ボーイ</option>
+      <option value="castboy"   ${init?.role==='castboy'  ?'selected':''}>キャスト,ボーイ</option>
       <option value="staff" ${init?.role==='staff'?'selected':''}>スタッフ</option>
       <option value="fired" ${init?.role==='fired'?'selected':''}>解雇</option>
     </select>
